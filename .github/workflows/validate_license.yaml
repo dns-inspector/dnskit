@@ -1,0 +1,32 @@
+name: "Build Package"
+
+on:
+  push:
+    paths:
+      - '.github/workflows/validate_license.yml'
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'Package.swift'
+  pull_request:
+    paths:
+      - '.github/workflows/validate_license.yml'
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'Package.swift'
+
+permissions:
+  packages: read
+
+jobs:
+  validate_license:
+    name: "Validate Localization"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        id: checkout
+        uses: actions/checkout@v4
+      
+      - name: Validate License Header
+        id: validate_license_header
+        run: |
+          python3 .github/check-license.py

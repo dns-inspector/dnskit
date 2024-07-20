@@ -1,0 +1,90 @@
+name: "Build Package"
+
+on:
+  push:
+    paths:
+      - '.github/workflows/build.yml'
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'Package.swift'
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'Package.swift'
+
+permissions:
+  packages: read
+
+env:
+  TEST_DEVICE: "iPhone 15 Pro"
+
+jobs:
+  build:
+    name: "Build App"
+    runs-on: macos-14
+    steps:
+      - name: Checkout Source
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: "Prepare Build Environment"
+        id: prepare
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          xcode-select -p
+          mkdir -p /Users/runner/derived_data
+          echo "SWIFTLINT_CACHE_KEY=swiftlint_$(swift package dump-package | jq -r '.dependencies[0].sourceControl[0].requirement.revision[0]')" >> "$GITHUB_OUTPUT"
+
+      - name: "Restore Cached Plugins"
+        id: restore_plugins
+        uses: actions/cache@v4
+        with:
+          key: ${{ steps.prepare.outputs.SWIFTLINT_CACHE_KEY }}
+          path: |
+            .build/artifacts
+            .build/checkouts
+            .build/plugins/cache
+            .build/repositories
+
+      - name: "Build Package"
+        id: build
+        run: |
+          xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' build
+
+      - name: Install Go
+        id: install_go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+          cache-dependency-path: Tests/DNSKitTests/TestServer/go.sum
+
+      - name: Prepare Test Server
+        id: testserver_prepare
+        run: |
+          cd Tests/DNSKitTests/Test Server
+          echo "Compiling test server"
+          CGO_ENABLED=0 go build
+          echo "Generating certifiate & key"
+          ./TestServer -g
+          xcrun simctl boot "${{ env.TEST_DEVICE }}"
+          xcrun simctl keychain "${{ env.TEST_DEVICE }}" add-root-cert ./root.crt
+
+      - name: Start Test Server
+        id: testserver_start
+        shell: bash
+        run: |
+          cd Tests/DNSKitTests/TestServer
+          nohup ./TestServer -c root.crt -k root.key &
+
+      - name: Run Automated Tests
+        id: certificatekit_tests
+        run: |
+          xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results
+          path: /Users/runner/derived_data/Logs/Test/Test-DNSKit-*.xcresult

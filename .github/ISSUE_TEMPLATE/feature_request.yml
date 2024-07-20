@@ -1,0 +1,24 @@
+name: Feature Request
+description: "Have a suggestion to make DNSKit even better? File it here!"
+labels: ["feature-request"]
+body:
+  - type: checkboxes
+    id: existing_issues
+    attributes:
+      label: "Searched for Another Report"
+      options:
+        - label: "Confirm that you have already searched for another report of your bug"
+    validations:
+      required: true
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: "Describe your feature request and how it would benefit DNSKit:"
+    validations:
+      required: true
+  - type: checkboxes
+    id: willing_to_help
+    attributes:
+      label: "I am willing to help build this feature"
+      options:
+        - label: "If you are willing to help build this feature then please check this box. Note that feature requests are more likely to be accepted if you are willing to help build them."
