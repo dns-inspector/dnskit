@@ -37,6 +37,7 @@ jobs:
           xcode-select -p
           mkdir -p /Users/runner/derived_data
           echo "SWIFTLINT_CACHE_KEY=swiftlint_$(swift package dump-package | jq -r '.dependencies[0].sourceControl[0].requirement.revision[0]')" >> "$GITHUB_OUTPUT"
+          defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES
           defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES
 
       - name: "Restore Cached Plugins"
@@ -53,7 +54,7 @@ jobs:
       - name: "Build Package"
         id: build
         run: |
-          xcodebuild -skipMacroValidation -skipPackagePluginValidation -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' build
+          xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' build
 
       - name: Install Go
         id: install_go
@@ -83,7 +84,7 @@ jobs:
       - name: Run Automated Tests
         id: certificatekit_tests
         run: |
-          xcodebuild -skipMacroValidation -skipPackagePluginValidation -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' test
+          xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' test
 
       - uses: actions/upload-artifact@v4
         if: failure()
