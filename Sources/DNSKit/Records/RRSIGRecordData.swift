@@ -89,6 +89,7 @@ public struct RRSIGRecordData: RecordData {
     public var description: String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMddHHmmss"
+        dateFormatter.timeZone = TimeZone(abbreviation: "GMT")!
         return "\(self.algorithm.rawValue) \(self.labelCount) \(self.ttlSeconds) \(dateFormatter.string(from: self.signatureNotAfter)) \(dateFormatter.string(from: self.signatureNotBefore)) \(self.keyTag) \(self.signerName) \(self.signature.base64EncodedString())"
     }
 }

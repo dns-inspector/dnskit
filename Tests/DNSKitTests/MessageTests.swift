@@ -276,7 +276,7 @@ final class MessageTests: XCTestCase {
         XCTAssertEqual(data3.algorithm, .RSA_SHA256)
         XCTAssertEqual(data3.labelCount, 2)
         XCTAssertEqual(data3.ttlSeconds, 900)
-        XCTAssertEqual(message.answers[2].description, "dns.google. 342 IN RRSIG 8 2 900 20240407164854 20240316164854 45336 dns.google. JuwpKgWIwWlo6xILjDsBCcjeNsGiaAnOWoe5yCpVcCyRZHd2yELmvJMzGpUkppoRpWWdKw3j8FCFhRoN+IQ80+fvLc1e7tY/qU/IFNmE0tNRhE5/NAd3lFadoLUhX2qJ7XQrMji7eOQXb45CeFL/jZfEwNozeWu1HQVVGxtelZE=")
+        XCTAssertEqual(message.answers[2].description, "dns.google. 342 IN RRSIG 8 2 900 20240407234854 20240316234854 45336 dns.google. JuwpKgWIwWlo6xILjDsBCcjeNsGiaAnOWoe5yCpVcCyRZHd2yELmvJMzGpUkppoRpWWdKw3j8FCFhRoN+IQ80+fvLc1e7tY/qU/IFNmE0tNRhE5/NAd3lFadoLUhX2qJ7XQrMji7eOQXb45CeFL/jZfEwNozeWu1HQVVGxtelZE=")
         let signedData = try data3.signedData()
         XCTAssertEqual(signedData.hexEncodedString(), "0001080200000384661330e665f62fe6b11803646e7306676f6f676c6500")
     }
