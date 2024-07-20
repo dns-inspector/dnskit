@@ -1,4 +1,4 @@
-name: "Build Package"
+name: "Validate License"
 
 on:
   push:
@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   validate_license:
-    name: "Validate Localization"
+    name: "Validate License"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source
