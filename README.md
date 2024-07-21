@@ -1,5 +1,7 @@
 # DNSKit
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fdns-inspector%2Fdnskit%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/dns-inspector/dnskit)
+
 An asynchronous DNS library for Swift.
 
 DNSKit provides a wire array of support acorss the DNS ecosystem, including:
