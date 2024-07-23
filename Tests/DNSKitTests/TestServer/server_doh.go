@@ -108,7 +108,13 @@ func (s *tserverDNSOverHTTPS) ServeHTTP(rw http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	rw.Header().Set("Content-Type", "application/dns-message")
+	if testName == TestBadContentType {
+		rw.Header().Set("Content-Type", "application/UWU-whats-THIS")
+	} else if testName == TestNoContentType {
+		//
+	} else {
+		rw.Header().Set("Content-Type", "application/dns-message")
+	}
 	rw.Header().Set("Content-Length", fmt.Sprintf("%d", len(response)))
 	rw.WriteHeader(200)
 	rw.Write(response)

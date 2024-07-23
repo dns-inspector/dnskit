@@ -45,4 +45,24 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     func testLocalAQueryInvalidAddress() async throws {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query").testLocalAQueryInvalidAddress()
     }
+
+    func testBadContentType() async throws {
+        let query = try Query(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query", recordType: .A, name: "bad.content.type.example.com")
+        do {
+            _ = try await query.execute()
+            XCTFail("No failure seen for bad content type")
+        } catch {
+            //
+        }
+    }
+
+    func testNoContentType() async throws {
+        let query = try Query(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query", recordType: .A, name: "no.content.type.example.com")
+        do {
+            _ = try await query.execute()
+            XCTFail("No failure seen for no content type")
+        } catch {
+            //
+        }
+    }
 }

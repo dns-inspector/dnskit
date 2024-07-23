@@ -18,6 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package main
 
 import (
+	"log"
+
 	"golang.org/x/net/dns/dnsmessage"
 )
 
@@ -28,6 +30,10 @@ const (
 	TestNameLengthOver     = "length.over.example.com."
 	TestNameLengthUnder    = "length.under.example.com."
 	TestInvalidIPv4Address = "invalid.ipv4.example.com."
+
+	// DOH Only
+	TestBadContentType = "bad.content.type.example.com."
+	TestNoContentType  = "no.content.type.example.com."
 )
 
 func getDNSTestName(in []byte) string {
@@ -56,6 +62,12 @@ func getDNSTestName(in []byte) string {
 		return TestNameLengthUnder
 	case TestInvalidIPv4Address:
 		return TestInvalidIPv4Address
+	case TestBadContentType:
+		return TestBadContentType
+	case TestNoContentType:
+		return TestNoContentType
+	default:
+		log.Printf("Unknown test name %s", questions[0].Name.String())
 	}
 
 	return TestNameControl
