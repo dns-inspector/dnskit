@@ -64,8 +64,7 @@ internal class TLSClient: IClient {
 
             switch state {
             case .waiting(let error):
-                printError("[\(#fileID):\(#line)] Connection error: \(error)")
-                completeRequest(.failure(error))
+                printError("[\(#fileID):\(#line)] Network path not ready, waiting: \(error)")
             case .ready:
                 printDebug("[\(#fileID):\(#line)] NWConnection ready")
 
