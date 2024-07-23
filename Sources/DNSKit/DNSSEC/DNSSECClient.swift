@@ -452,7 +452,7 @@ internal struct DNSSECClient {
             }
         }
 
-        _ = sync.wait(timeout: .now().advanced(by: DispatchTimeInterval.seconds(10)))
+        _ = sync.wait(timeout: .now().adding(seconds: 10))
 
         if questionsAnswered != questionsToSend {
             printError("[\(#fileID):\(#line)] Unable to query for all records")

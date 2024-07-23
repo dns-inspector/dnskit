@@ -36,7 +36,7 @@ public struct TransportOptions {
     }
 
     internal var timeoutDispatchTime: DispatchTime {
-        return DispatchTime.now().advanced(by: DispatchTimeInterval.seconds(Int(self.timeout)))
+        return DispatchTime.now().adding(seconds: self.timeout)
     }
 }
 
@@ -126,6 +126,7 @@ public struct Query {
 
     /// Execute this DNS query and return the response message
     /// - Returns: The response message
+    @available(iOS 13.0, macOS 10.15, *)
     public func execute() async throws -> Message {
         var didComplete = false
         return try await withCheckedThrowingContinuation { continuation in
@@ -177,6 +178,7 @@ public struct Query {
     /// - Throws: Will throw on any fatal error while collecting required information.
     /// This method will perform multiple queries in relation to the number of zones within the name.
     /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
+    @available(iOS 13.0, macOS 10.15, *)
     public func authenticate(message: Message) async throws -> DNSSECResult {
         return try await withCheckedThrowingContinuation { continuation in
             self.authenticate(message: message) { result in

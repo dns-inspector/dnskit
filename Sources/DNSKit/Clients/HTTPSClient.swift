@@ -98,7 +98,7 @@ internal class HTTPClient: IClient {
                 return
             }
 
-            guard let contentType = response.value(forHTTPHeaderField: "Content-Type") else {
+            guard let contentType = response.allHeaderFields["Content-Type"] as? String else {
                 printError("[\(#fileID):\(#line)] No content type header")
                 complete(.failure(Utils.MakeError("No content type")))
                 return

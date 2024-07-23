@@ -57,7 +57,9 @@ internal func printError(_ message: String) {
 }
 
 internal struct PrintLogger: ILogger {
+    internal let dateFormatter = DateFormatter.iso8601()
+
     func write(_ level: LogLevel, message: String) {
-        print("[\(level.string().uppercased())] [\(Date().ISO8601Format())] \(message)")
+        print("[\(level.string().uppercased())] [\(dateFormatter.string(from: Date()))] \(message)")
     }
 }

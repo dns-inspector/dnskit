@@ -27,6 +27,7 @@ public struct WHOIS {
     /// - Throws: Will throw if unable to perform the lookup
     ///
     /// > Tip: WHOIS data is always returned as an human-readable formatted string.
+    @available(iOS 13.0, macOS 10.15, *)
     public static func lookup(_ domain: String) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
             self.lookup(domain) { result in

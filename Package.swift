@@ -21,8 +21,11 @@ import PackageDescription
 let package = Package(
     name: "DNSKit",
     platforms: [
-        .iOS(.v15),
-        .macOS(.v12),
+        .iOS(.v12),
+        .macOS(.v10_14),
+        .tvOS(.v12),
+        .macCatalyst(.v13),
+        .watchOS(.v4)
     ],
     products: [
         .library(
