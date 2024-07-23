@@ -28,18 +28,14 @@ let package = Package(
         .library(
             name: "DNSKit",
             targets: ["DNSKit"]
-        ),
-    ],
-    dependencies: [
-        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", revision: "b8431a26655378581890d56b95a0b59aba9f62da")
+        )
     ],
     targets: [
         .target(
             name: "DNSKit",
             exclude: [
                 "WHOIS/update_whois.py"
-            ],
-            plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
+            ]
         ),
         .testTarget(
             name: "DNSKitTests",
