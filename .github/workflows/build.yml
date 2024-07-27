@@ -4,12 +4,14 @@ on:
   push:
     paths:
       - '.github/workflows/build.yml'
+      - '.swiftlint.yml'
       - 'Sources/**'
       - 'Tests/**'
       - 'Package.swift'
   pull_request:
     paths:
       - '.github/workflows/build.yml'
+      - '.swiftlint.yml'
       - 'Sources/**'
       - 'Tests/**'
       - 'Package.swift'

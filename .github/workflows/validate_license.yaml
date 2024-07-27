@@ -4,12 +4,14 @@ on:
   push:
     paths:
       - '.github/workflows/validate_license.yml'
+      - '.github/check-license.py'
       - 'Sources/**'
       - 'Tests/**'
       - 'Package.swift'
   pull_request:
     paths:
       - '.github/workflows/validate_license.yml'
+      - '.github/check-license.py'
       - 'Sources/**'
       - 'Tests/**'
       - 'Package.swift'
