@@ -65,7 +65,7 @@ jobs:
       - name: "Lint Code"
         id: lint
         run: |
-          /Users/runner/bin/swiftlint lint --quiet Sources
+          /Users/runner/bin/swiftlint lint --quiet --strict Sources
 
       - name: "Build Package"
         id: build

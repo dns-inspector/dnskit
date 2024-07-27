@@ -70,7 +70,7 @@ internal struct DNSSECClient {
         let result = try authenticate(message: message, resources: resources)
         complete(result)
     }
-    
+
     /// Authenticate the message with the given set of resources
     /// - Parameters:
     ///   - message: The message to authenticate
