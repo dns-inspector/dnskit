@@ -55,7 +55,7 @@ internal class TLSClient: IClient {
         let tlsOptions = NWProtocolTLS.Options()
         let parameters = NWParameters.init(tls: tlsOptions, tcp: NWProtocolTCP.Options())
 
-        sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { metadata, trustRef, verifyComplete in
+        sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { _, trustRef, verifyComplete in
             let trust = sec_trust_copy_ref(trustRef).takeRetainedValue()
 
             var trustResult = SecTrustResultType.invalid
