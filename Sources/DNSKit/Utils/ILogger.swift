@@ -35,6 +35,8 @@ public protocol ILogger {
     ///   - level: The level of the message
     ///   - message: The log message
     func write(_ level: LogLevel, message: String)
+    /// Get the current log level used by the logging facility
+    func currentLevel() -> LogLevel?
 }
 
 /// The logging facility used by DNSKit. Defaults to an internal interface that just calls `print()`.
@@ -61,5 +63,9 @@ internal struct PrintLogger: ILogger {
 
     func write(_ level: LogLevel, message: String) {
         print("[\(level.string().uppercased())] [\(dateFormatter.string(from: Date()))] \(message)")
+    }
+
+    func currentLevel() -> LogLevel? {
+        return .Debug
     }
 }

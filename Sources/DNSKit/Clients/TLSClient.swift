@@ -58,13 +58,26 @@ internal class TLSClient: IClient {
         sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { _, trustRef, verifyComplete in
             let trust = sec_trust_copy_ref(trustRef).takeRetainedValue()
 
+            var trustError: CFError?
+            let verifyResult = SecTrustEvaluateWithError(trust, &trustError)
+
             var trustResult = SecTrustResultType.invalid
             if SecTrustGetTrustResult(trust, &trustResult) != errSecSuccess {
-                verifyComplete(false)
+                verifyComplete(verifyResult)
                 return
             }
 
-            printDebug("[\(#fileID):\(#line)] TLS trust result: \(trustResult)")
+            // Only continue if we've enabled debug logging.
+            // The remainder of this block is just for debugging cert issues.
+            if log?.currentLevel() != .Debug {
+                verifyComplete(verifyResult)
+                return
+            }
+
+            printDebug("[\(#fileID):\(#line)] TLS trust result: \(verifyResult) (\(trustResult.rawValue))")
+            if let error = trustError {
+                printDebug("[\(#fileID):\(#line)] TLS trust error: \(error.localizedDescription)")
+            }
 
             let numberOfCertificates = SecTrustGetCertificateCount(trust)
             for i in 0..<numberOfCertificates {
@@ -77,7 +90,7 @@ internal class TLSClient: IClient {
 
                 printDebug("[\(#fileID):\(#line)] Certificate #\(i): \(subject): \((SecCertificateCopyData(secCert) as Data).base64EncodedString())")
             }
-            verifyComplete(true)
+            verifyComplete(verifyResult)
         }, queue)
 
         let connection = NWConnection(to: NWEndpoint.socketAddress(self.address, defaultPort: 853), using: parameters)
