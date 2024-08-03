@@ -16,6 +16,7 @@
 
 import Foundation
 import Network
+import Security
 
 /// The DNS over TLS client.
 internal class TLSClient: IClient {
@@ -51,7 +52,35 @@ internal class TLSClient: IClient {
         let semaphore = DispatchSemaphore(value: 0)
         var didComplete = false
 
-        let connection = NWConnection(to: NWEndpoint.socketAddress(self.address, defaultPort: 853), using: .tls)
+        let tlsOptions = NWProtocolTLS.Options()
+        let parameters = NWParameters.init(tls: tlsOptions, tcp: NWProtocolTCP.Options())
+
+        sec_protocol_options_set_verify_block(tlsOptions.securityProtocolOptions, { metadata, trustRef, verifyComplete in
+            let trust = sec_trust_copy_ref(trustRef).takeRetainedValue()
+
+            var trustResult = SecTrustResultType.invalid
+            if SecTrustGetTrustResult(trust, &trustResult) != errSecSuccess {
+                verifyComplete(false)
+                return
+            }
+
+            printDebug("[\(#fileID):\(#line)] TLS trust result: \(trustResult)")
+
+            let numberOfCertificates = SecTrustGetCertificateCount(trust)
+            for i in 0..<numberOfCertificates {
+                guard let secCert = SecTrustGetCertificateAtIndex(trust, i) else {
+                    continue
+                }
+                guard let subject = SecCertificateCopySubjectSummary(secCert) as? String else {
+                    continue
+                }
+
+                printDebug("[\(#fileID):\(#line)] Certificate #\(i): \(subject): \((SecCertificateCopyData(secCert) as Data).base64EncodedString())")
+            }
+            verifyComplete(true)
+        }, queue)
+
+        let connection = NWConnection(to: NWEndpoint.socketAddress(self.address, defaultPort: 853), using: parameters)
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
