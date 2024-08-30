@@ -190,6 +190,8 @@ public struct Message {
                     recordData = try RRSIGRecordData(recordData: value)
                 case .DNSKEY:
                     recordData = try DNSKEYRecordData(recordData: value)
+                case .HTTPS:
+                    recordData = try HTTPSRecordData(recordData: value)
                 }
             } catch {
                 printError("[\(#fileID):\(#line)] Error serlizing record data: \(error)")

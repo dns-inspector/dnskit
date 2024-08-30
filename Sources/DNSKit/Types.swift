@@ -30,6 +30,7 @@ public enum RecordType: UInt16, Codable, CaseIterable {
     case DS = 43
     case RRSIG = 46
     case DNSKEY = 48
+    case HTTPS = 65
 
     public func string() -> String {
         return String(describing: self)
