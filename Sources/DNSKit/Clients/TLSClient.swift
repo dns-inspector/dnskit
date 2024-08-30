@@ -62,7 +62,9 @@ internal class TLSClient: IClient {
             let verifyResult = SecTrustEvaluateWithError(trust, &trustError)
 
             var trustResult = SecTrustResultType.invalid
-            if SecTrustGetTrustResult(trust, &trustResult) != errSecSuccess {
+            let trustResultError = SecTrustGetTrustResult(trust, &trustResult)
+            if trustResultError != errSecSuccess {
+                printError("[\(#fileID):\(#line)] SecTrustGetTrustResult error: \(SecCopyErrorMessageString(trustResultError, nil) ?? "unknown" as CFString)")
                 verifyComplete(verifyResult)
                 return
             }
@@ -74,7 +76,7 @@ internal class TLSClient: IClient {
                 return
             }
 
-            printDebug("[\(#fileID):\(#line)] TLS trust result: \(verifyResult) (\(trustResult.rawValue))")
+            printDebug("[\(#fileID):\(#line)] TLS trust result: \(verifyResult) (\(String(describing: trustResult)))")
             if let error = trustError {
                 printDebug("[\(#fileID):\(#line)] TLS trust error: \(error.localizedDescription)")
             }
