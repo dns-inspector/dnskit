@@ -68,6 +68,9 @@ public struct WHOIS {
             return
         }
 
+        let semaphore = DispatchSemaphore(value: 0)
+        var didComplete = false
+
         printDebug("[\(#fileID):\(#line)] Connecting to \(server):43...")
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host.name(server, nil), port: NWEndpoint.Port(rawValue: 43)!)
         let connection = NWConnection(to: endpoint, using: NWParameters.init(tls: nil, tcp: NWProtocolTCP.Options()))
@@ -92,12 +95,17 @@ public struct WHOIS {
                         return
                     }
 
-                    let response = String(decoding: data, as: UTF8.self)
+                    // Have to use NSString because NSRegularExpression behaves poorly with Swift's String
+                    let response = NSString(data: data, encoding: NSASCIIStringEncoding) ?? ""
+
+                    if log?.currentLevel() == .Debug {
+                        printDebug("[\(#fileID):\(#line)] WHOIS response: \(response)")
+                    }
 
                     // Check if there is a server we should follow to
                     var nextServer: String?
-                    if let match = WHOIS.registrarLinePattern.firstMatch(in: response, range: NSRange(location: 0, length: response.count)) {
-                        let line = response.substring(with: match.range)
+                    if let match = WHOIS.registrarLinePattern.firstMatch(in: response as String, range: NSRange(location: 0, length: response.length)) {
+                        let line = (response as NSString).substring(with: match.range)
                         let parts = String(line).split(separator: ":")
                         if parts.count != 2 {
                             printWarning("[\(#fileID):\(#line)] Unknown format of registrar WHOIS server line: \(line)")
@@ -118,19 +126,21 @@ public struct WHOIS {
                     }
 
                     guard let followServer = nextServer else {
-                        complete(.success(response))
+                        complete(.success(response as String))
                         connection.cancel()
                         return
                     }
 
                     if followServer.lowercased() == server.lowercased() {
-                        complete(.success(response))
+                        complete(.success(response as String))
                         connection.cancel()
                         return
                     }
 
                     connection.cancel()
                     WHOIS.lookup(domain, server: followServer, depth: depth+1, complete: complete)
+                    didComplete = true
+                    semaphore.signal()
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
@@ -144,6 +154,12 @@ public struct WHOIS {
             }
         }
         connection.start(queue: DispatchQueue.global(qos: .userInitiated))
+        _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 5))
+        if !didComplete {
+            printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): timed out")
+            complete(.failure(Utils.MakeError("Timed out")))
+            connection.cancel()
+        }
     }
 
     /// Get the WHOIS server address for the given domain name.
