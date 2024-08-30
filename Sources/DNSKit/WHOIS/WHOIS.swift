@@ -103,27 +103,10 @@ public struct WHOIS {
                     }
 
                     // Check if there is a server we should follow to
-                    var nextServer: String?
-                    if let match = WHOIS.registrarLinePattern.firstMatch(in: response as String, range: NSRange(location: 0, length: response.length)) {
-                        let line = (response as NSString).substring(with: match.range)
-                        let parts = String(line).split(separator: ":")
-                        if parts.count != 2 {
-                            printWarning("[\(#fileID):\(#line)] Unknown format of registrar WHOIS server line: \(line)")
-                        }
+                    let nextServer = WHOIS.findRedirectInResponse(response)
 
-                        var followServer = String(parts[1])
-                        followServer = followServer.replacingOccurrences(of: " ", with: "")
-                        followServer = followServer.replacingOccurrences(of: "\r", with: "")
-                        followServer = followServer.replacingOccurrences(of: "\n", with: "")
-
-                        if followServer.hasPrefix("https://") {
-                            followServer = followServer.replacingOccurrences(of: "https://", with: "")
-                        } else if followServer.hasPrefix("http://") {
-                            followServer = followServer.replacingOccurrences(of: "http://", with: "")
-                        }
-                        nextServer = followServer
-                        printDebug("[\(#fileID):\(#line)] Following redirect to \(followServer)")
-                    }
+                    didComplete = true
+                    semaphore.signal()
 
                     guard let followServer = nextServer else {
                         complete(.success(response as String))
@@ -139,8 +122,6 @@ public struct WHOIS {
 
                     connection.cancel()
                     WHOIS.lookup(domain, server: followServer, depth: depth+1, complete: complete)
-                    didComplete = true
-                    semaphore.signal()
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
@@ -211,5 +192,31 @@ public struct WHOIS {
         }
 
         return (nil, nil)
+    }
+
+    internal static func findRedirectInResponse(_ reply: NSString) -> String? {
+        guard let match = WHOIS.registrarLinePattern.firstMatch(in: reply as String, range: NSRange(location: 0, length: reply.length)) else {
+            return nil
+        }
+
+        let line = reply.substring(with: match.range)
+        let parts = String(line).split(separator: ":")
+        if parts.count != 2 {
+            printWarning("[\(#fileID):\(#line)] Unknown format of registrar WHOIS server line: \(line)")
+        }
+
+        var followServer = String(parts[1])
+        followServer = followServer.replacingOccurrences(of: " ", with: "")
+        followServer = followServer.replacingOccurrences(of: "\r", with: "")
+        followServer = followServer.replacingOccurrences(of: "\n", with: "")
+
+        if followServer.hasPrefix("https://") {
+            followServer = followServer.replacingOccurrences(of: "https://", with: "")
+        } else if followServer.hasPrefix("http://") {
+            followServer = followServer.replacingOccurrences(of: "http://", with: "")
+        }
+
+        printDebug("[\(#fileID):\(#line)] Following redirect to \(followServer)")
+        return followServer
     }
 }

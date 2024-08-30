@@ -44,4 +44,14 @@ final class WHOISTests: XCTestCase {
         let result = try await WHOIS.lookup("example.com")
         XCTAssertTrue(result.count > 0)
     }
+
+    func testFindRedirect() {
+        let replyCRLF: NSString = "Domain Name: foo.bar\r\nRegistrar WHOIS Server: whois.example.com\r\nRegistrar URL: http://www.example.com\r\n"
+        let redirectCRLF = WHOIS.findRedirectInResponse(replyCRLF)
+        XCTAssertEqual(redirectCRLF, "whois.example.com")
+
+        let replyLF: NSString = "Domain Name: foo.bar\nRegistrar WHOIS Server: whois.example.com\nRegistrar URL: http://www.example.com\n"
+        let redirectLF = WHOIS.findRedirectInResponse(replyLF)
+        XCTAssertEqual(redirectLF, "whois.example.com")
+    }
 }
