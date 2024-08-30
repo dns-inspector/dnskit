@@ -35,6 +35,11 @@ public enum RecordType: UInt16, Codable, CaseIterable {
     public func string() -> String {
         return String(describing: self)
     }
+
+    /// If this record type can be included in a query.
+    public func canQuery() -> Bool {
+        return self != .RRSIG
+    }
 }
 
 /// DNS record classes
