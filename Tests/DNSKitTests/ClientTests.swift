@@ -62,6 +62,14 @@ final class ClientTests {
         XCTAssertTrue(result.chainTrusted)
     }
 
+    func testLocalControl() async throws {
+        let query = Query(client: client, recordType: .A, name: "control.example.com")
+        let reply = try await query.execute()
+        XCTAssertTrue(reply.answers.count == 1)
+        XCTAssertEqual(reply.answers[0].recordType, .A)
+        XCTAssertNotNil(reply.answers[0].data as? ARecordData)
+    }
+
     func testLocalRandomData() async throws {
         let query = Query(client: client, recordType: .A, name: "random.example.com")
         do {

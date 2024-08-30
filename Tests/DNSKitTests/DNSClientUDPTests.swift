@@ -30,6 +30,10 @@ final class DNSClientUDPTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .DNS, serverAddress: "1.1.1.1:53").testAuthenticateMessage()
     }
 
+    func testLocalControl() async throws {
+        try await ClientTests(transportType: .DNS, serverAddress: "127.0.0.1:8400").testLocalControl()
+    }
+
     func testLocalRandomData() async throws {
         try await ClientTests(transportType: .DNS, serverAddress: "127.0.0.1:8400").testLocalRandomData()
     }
