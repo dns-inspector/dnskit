@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes transport options for the DNS request
-public struct TransportOptions {
+public struct TransportOptions: Sendable {
     /// If the transport type is DNS, should TCP connections be used instead of UDP.
     ///
     /// TCP is preferred over UDP by this package because modern networks are more than good enough that any performance difference between TCP
@@ -41,7 +41,7 @@ public struct TransportOptions {
 }
 
 /// Describes query options for the DNS request
-public struct QueryOptions {
+public struct QueryOptions: Sendable {
     /// Should DNSSEC signatures be requested alongside the requested resource
     public var dnssecRequested = false
 
@@ -52,7 +52,7 @@ public struct QueryOptions {
 }
 
 /// Describes a DNS query
-public struct Query {
+public struct Query: Sendable {
     /// The transport type to use for sending the query
     public let transportType: TransportType
     /// Options for the transport type
@@ -128,22 +128,16 @@ public struct Query {
     /// - Returns: The response message
     @available(iOS 13.0, macOS 10.15, *)
     public func execute() async throws -> Message {
-        var didComplete = false
         return try await withCheckedThrowingContinuation { continuation in
             self.execute { result in
-                if didComplete {
-                    return
-                }
-
                 continuation.resume(with: result)
-                didComplete = true
             }
         }
     }
 
     /// Execute this DNS query
     /// - Parameter complete: A callback invoked with the response message or an error
-    public func execute(withCallback complete: @escaping (Result<Message, Error>) -> Void) {
+    public func execute(withCallback complete: @Sendable @escaping (Result<Message, Error>) -> Void) {
         self.dispatchQueue.async {
             self.client.send(message: self.message(), complete: complete)
         }
@@ -193,7 +187,7 @@ public struct Query {
     ///   - complete: Callback called when complete with the result of the authentication
     /// This method will perform multiple queries in relation to the number of zones within the name.
     /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
-    public func authenticate(message: Message, complete: @escaping (Result<DNSSECResult, Error>) -> Void) {
+    public func authenticate(message: Message, complete: @Sendable @escaping (Result<DNSSECResult, Error>) -> Void) {
         do {
             try self.client.authenticate(message: message) { result in
                 complete(.success(result))

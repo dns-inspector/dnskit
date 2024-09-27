@@ -19,7 +19,7 @@ import Network
 import Security
 
 /// The DNS over TLS client.
-internal class TLSClient: IClient {
+internal final class TLSClient: IClient {
     fileprivate let address: SocketAddress
     fileprivate let transportOptions: TransportOptions
 
@@ -28,29 +28,22 @@ internal class TLSClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @escaping (Result<Message, any Error>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Message, any Error>) -> Void) {
         let timer = Timer.start()
 
-        let questionData: Data
+        let messageData: Data
         do {
-            questionData = try message.data()
+            messageData = try message.data(withLength: true)
         } catch {
             complete(.failure(error))
             return
         }
 
-        var messageData = Data()
-        let length = UInt16(questionData.count).bigEndian
-        withUnsafePointer(to: length) { p in
-            messageData.append(Data(bytes: p, count: 2))
-        }
-        messageData.append(questionData)
-
-        printDebug("[\(#fileID):\(#line)] Question: \(questionData.hexEncodedString())")
+        printDebug("[\(#fileID):\(#line)] Question: \(messageData.hexEncodedString())")
 
         let queue = DispatchQueue(label: "io.ecn.dnskit.tlsclient")
         let semaphore = DispatchSemaphore(value: 0)
-        var didComplete = false
+        let didComplete = AtomicBool(initialValue: false)
 
         let tlsOptions = NWProtocolTLS.Options()
         let parameters = NWParameters.init(tls: tlsOptions, tcp: NWProtocolTCP.Options())
@@ -99,10 +92,12 @@ internal class TLSClient: IClient {
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
-            let completeRequest: (Result<Message, any Error>) -> Void = { result in
-                complete(result)
-                connection.cancel()
-                didComplete = true
+            let completeRequest: @Sendable (Result<Message, any Error>) -> Void = { result in
+                didComplete.If(false) {
+                    complete(result)
+                    connection.cancel()
+                    return true
+                }
                 semaphore.signal()
             }
 
@@ -194,15 +189,15 @@ internal class TLSClient: IClient {
         connection.start(queue: queue)
 
         _ = semaphore.wait(timeout: self.transportOptions.timeoutDispatchTime)
-        if !didComplete {
+        didComplete.If(false) {
             connection.cancel()
             printError("[\(#fileID):\(#line)] Connection timed out")
             complete(.failure(Utils.MakeError("Connection timed out")))
-            return
+            return true
         }
     }
 
-    func authenticate(message: Message, complete: @escaping (DNSSECResult) -> Void) throws {
+    func authenticate(message: Message, complete: @Sendable @escaping (DNSSECResult) -> Void) throws {
         try DNSSECClient.authenticateMessage(message, client: self, complete: complete)
     }
 }

@@ -21,30 +21,30 @@ permissions:
   packages: read
 
 env:
-  TEST_DEVICE: "iPhone 15 Pro"
+  TEST_DEVICE: "iPhone 16 Pro"
 
 jobs:
   build:
     name: "Build App"
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout Source
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 #pin v4.2.0
 
       - name: "Prepare Build Environment"
         id: prepare
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
           xcode-select -p
           mkdir -p /Users/runner/derived_data
           echo "SWIFTLINT_CACHE_KEY=swiftlint_$(gh api repos/realm/swiftlint/releases/latest --jq '.assets[] | select(.name == "portable_swiftlint.zip") | .id')" >> "$GITHUB_OUTPUT"
 
       - name: Restore Cached SwiftLint
         id: restore_swiftlint
-        uses: actions/cache@v4
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 #pin v4.0.2
         with:
           key: ${{ steps.prepare.outputs.SWIFTLINT_CACHE_KEY }}
           path: |
@@ -64,22 +64,24 @@ jobs:
           rm swiftlint.zip LICENSE
           chmod a+x swiftlint
 
+      - name: Install Go
+        id: install_go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 #pin v5.0.2
+        with:
+          go-version: "stable"
+          cache-dependency-path: Tests/DNSKitTests/TestServer/go.sum
+
       - name: "Lint Code"
         id: lint
         run: |
           /Users/runner/bin/swiftlint lint --quiet --strict Sources
+          cd Tests/DNSKitTests/TestServer
+          go vet
 
       - name: "Build Package"
         id: build
         run: |
           xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' build
-
-      - name: Install Go
-        id: install_go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-          cache-dependency-path: Tests/DNSKitTests/TestServer/go.sum
 
       - name: Prepare Test Server
         id: testserver_prepare
@@ -104,7 +106,7 @@ jobs:
         run: |
           xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' test
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 #pin v4.4.0
         if: failure()
         with:
           name: test-results

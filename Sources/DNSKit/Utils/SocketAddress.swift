@@ -21,7 +21,7 @@ internal enum IPAddressVersion: Int {
     case v6 = 6
 }
 
-internal class SocketAddress: CustomStringConvertible, CustomDebugStringConvertible {
+internal final class SocketAddress: CustomStringConvertible, CustomDebugStringConvertible, Sendable {
     let ipAddress: String
     let port: UInt16?
     let version: IPAddressVersion

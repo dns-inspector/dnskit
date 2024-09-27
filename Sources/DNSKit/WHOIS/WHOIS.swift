@@ -18,7 +18,7 @@ import Foundation
 import Network
 
 /// WHOIS related utilities
-public struct WHOIS {
+public struct WHOIS: Sendable {
     private static let registrarLinePattern = NSRegularExpression("registrar whois server:.*\r?\n", options: .caseInsensitive)
 
     /// Perform a WHOIS lookup on the given domain name
@@ -42,26 +42,26 @@ public struct WHOIS {
     ///   - complete: Callback called when the lookup has completed with a result or an error.
     ///
     /// > Tip: WHOIS data is always returned as an human-readable formatted string.
-    public static func lookup(_ domain: String, complete: @escaping (Result<String, Error>) -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let (oServer, oBareDomain) = WHOIS.getLookupHost(for: domain)
-            guard let server = oServer else {
-                printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
-                complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
-                return
-            }
-            guard let bareDomain = oBareDomain else {
-                printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
-                complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
-                return
-            }
+    public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<String, Error>) -> Void) {
+        let (oServer, oBareDomain) = WHOIS.getLookupHost(for: domain)
+        guard let server = oServer else {
+            printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
+            complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
+            return
+        }
+        guard let bareDomain = oBareDomain else {
+            printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
+            complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
+            return
+        }
 
+        DispatchQueue.global(qos: .userInitiated).async {
             printDebug("[\(#fileID):\(#line)] Performing WHOIS lookup for \(domain) on \(server)")
             WHOIS.lookup(bareDomain, server: server, depth: 1, complete: complete)
         }
     }
 
-    internal static func lookup(_ domain: String, server: String, depth: Int, complete: @escaping (Result<String, Error>) -> Void) {
+    internal static func lookup(_ domain: String, server: String, depth: Int, complete: @Sendable @escaping (Result<String, Error>) -> Void) {
         if depth > 10 {
             printError("[\(#fileID):\(#line)] Aborting WHOIS request due to too many redirects")
             complete(.failure(Utils.MakeError("Too many redirects")))
@@ -69,7 +69,7 @@ public struct WHOIS {
         }
 
         let semaphore = DispatchSemaphore(value: 0)
-        var didComplete = false
+        let didComplete = AtomicBool(initialValue: false)
 
         printDebug("[\(#fileID):\(#line)] Connecting to \(server):43...")
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host.name(server, nil), port: NWEndpoint.Port(rawValue: 43)!)
@@ -105,18 +105,23 @@ public struct WHOIS {
                     // Check if there is a server we should follow to
                     let nextServer = WHOIS.findRedirectInResponse(response)
 
-                    didComplete = true
-                    semaphore.signal()
-
                     guard let followServer = nextServer else {
-                        complete(.success(response as String))
-                        connection.cancel()
+                        didComplete.If(false) {
+                            complete(.success(response as String))
+                            connection.cancel()
+                            return true
+                        }
+                        semaphore.signal()
                         return
                     }
 
                     if followServer.lowercased() == server.lowercased() {
-                        complete(.success(response as String))
-                        connection.cancel()
+                        didComplete.If(false) {
+                            complete(.success(response as String))
+                            connection.cancel()
+                            return true
+                        }
+                        semaphore.signal()
                         return
                     }
 
@@ -136,10 +141,11 @@ public struct WHOIS {
         }
         connection.start(queue: DispatchQueue.global(qos: .userInitiated))
         _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 5))
-        if !didComplete {
+        didComplete.If(false) {
             printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): timed out")
             complete(.failure(Utils.MakeError("Timed out")))
             connection.cancel()
+            return true
         }
     }
 

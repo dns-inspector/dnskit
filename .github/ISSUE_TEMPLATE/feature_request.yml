@@ -8,8 +8,6 @@ body:
       label: "Searched for Another Report"
       options:
         - label: "Confirm that you have already searched for another report of your bug"
-    validations:
-      required: true
   - type: textarea
     id: feature-description
     attributes:

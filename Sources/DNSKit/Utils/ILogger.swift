@@ -39,8 +39,9 @@ public protocol ILogger {
     func currentLevel() -> LogLevel?
 }
 
-/// The logging facility used by DNSKit. Defaults to an internal interface that just calls `print()`.
-public var log: ILogger? = PrintLogger()
+/// The logging facility used by DNSKit. Defaults to an internal interface that just calls `print()`. This should only ever be set once at the very launch of the
+/// application, and never changed.
+nonisolated(unsafe) public var log: ILogger? = PrintLogger()
 
 internal func printDebug(_ message: String) {
     log?.write(.Debug, message: message)

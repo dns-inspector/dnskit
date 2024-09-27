@@ -26,7 +26,7 @@ internal enum SvcParamKeys: UInt16 {
 }
 
 /// HTTP protocol versions
-public enum HTTPVersions: String {
+public enum HTTPVersions: String, Sendable {
     /// HTTP 1.1
     case HTTP1 = "http/1.1"
     /// HTTP 2

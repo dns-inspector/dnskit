@@ -10,14 +10,13 @@ body:
       label: "Searched for Another Report"
       options:
         - label: "Confirm that you have already searched for another report of your bug"
-    validations:
-      required: true
   - type: input
     id: version
     attributes:
       label: "DNSKit version or revision:"
     validations:
       required: true
+  - type: input
     id: device
     attributes:
       label: "Device Type and iOS, macOS, or iPadOS Version:"

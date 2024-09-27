@@ -18,7 +18,7 @@ import Foundation
 import Network
 
 /// The traditional DNS client. Supports both UDP and TCP.
-internal class DNSClient: IClient {
+internal final class DNSClient: IClient, Sendable {
     internal let address: SocketAddress
     internal let transportOptions: TransportOptions
 
@@ -27,40 +27,33 @@ internal class DNSClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @escaping (Result<Message, any Error>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Message, any Error>) -> Void) {
         let timer = Timer.start()
 
-        let questionData: Data
+        let messageData: Data
         do {
-            questionData = try message.data()
+            messageData = try message.data(withLength: self.transportOptions.dnsPrefersTcp)
         } catch {
             complete(.failure(error))
             return
         }
 
-        printDebug("[\(#fileID):\(#line)] Question: \(questionData.hexEncodedString())")
-
-        var messageData = Data()
-        if self.transportOptions.dnsPrefersTcp {
-            let length = UInt16(questionData.count).bigEndian
-            withUnsafePointer(to: length) { p in
-                messageData.append(Data(bytes: p, count: 2))
-            }
-        }
-        messageData.append(questionData)
+        printDebug("[\(#fileID):\(#line)] Question: \(messageData.hexEncodedString())")
 
         let queue = DispatchQueue(label: "io.ecn.dnskit.tlsclient")
         let semaphore = DispatchSemaphore(value: 0)
-        var didComplete = false
+        let didComplete = AtomicBool(initialValue: false)
 
         let connection = NWConnection(to: NWEndpoint.socketAddress(self.address, defaultPort: 53), using: self.transportOptions.dnsPrefersTcp ? .tcp : .udp)
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
-            let completeRequest: (Result<Message, any Error>) -> Void = { result in
-                complete(result)
-                connection.cancel()
-                didComplete = true
+            let completeRequest: @Sendable (Result<Message, any Error>) -> Void = { result in
+                didComplete.If(false) {
+                    complete(result)
+                    connection.cancel()
+                    return true
+                }
                 semaphore.signal()
             }
 
@@ -173,11 +166,11 @@ internal class DNSClient: IClient {
         connection.start(queue: queue)
 
         _ = semaphore.wait(timeout: self.transportOptions.timeoutDispatchTime)
-        if !didComplete {
+        didComplete.If(false) {
             connection.cancel()
             printError("[\(#fileID):\(#line)] Connection timed out")
             complete(.failure(Utils.MakeError("Connection timed out")))
-            return
+            return true
         }
     }
 

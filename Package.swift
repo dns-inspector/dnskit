@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 
 // DNSKit
 // Copyright (C) 2024 Ian Spence

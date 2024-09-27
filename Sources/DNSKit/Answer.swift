@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes a DNS answer
-public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertible {
+public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertible, Sendable {
     /// Resource name
     public let name: String
     /// Record type

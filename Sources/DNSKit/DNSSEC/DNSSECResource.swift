@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes all DNSSEC resources for a zone
-public struct DNSSECResource {
+public struct DNSSECResource: Sendable {
     /// The zone name
     public let zone: String
     /// DNSKEY answers for this zone

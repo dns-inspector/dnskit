@@ -17,7 +17,7 @@
 import Foundation
 
 /// DNS record types
-public enum RecordType: UInt16, Codable, CaseIterable {
+public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
     case A = 1
     case NS = 2
     case CNAME = 5
@@ -43,7 +43,7 @@ public enum RecordType: UInt16, Codable, CaseIterable {
 }
 
 /// DNS record classes
-public enum RecordClass: UInt16, Codable, CaseIterable {
+public enum RecordClass: UInt16, Codable, CaseIterable, Sendable {
     case IN = 1
     case CS = 2
     case CH = 3
@@ -55,7 +55,7 @@ public enum RecordClass: UInt16, Codable, CaseIterable {
 }
 
 /// Transport options
-public enum TransportType: String, Codable, CaseIterable {
+public enum TransportType: String, Codable, CaseIterable, Sendable {
     case DNS = "dns"
     case TLS = "tls"
     case HTTPS = "https"
@@ -66,7 +66,7 @@ public enum TransportType: String, Codable, CaseIterable {
 }
 
 /// DNS response codes
-public enum ResponseCode: Int, Codable, CaseIterable {
+public enum ResponseCode: Int, Codable, CaseIterable, Sendable {
     case NOERROR = 0
     case FORMERR = 1
     case SERVFAIL = 2
@@ -84,7 +84,7 @@ public enum ResponseCode: Int, Codable, CaseIterable {
 }
 
 /// DNS operation codes
-public enum OperationCode: Int, Codable, CaseIterable {
+public enum OperationCode: Int, Codable, CaseIterable, Sendable {
     case Query = 0
     case IQuery = 1
     case Status = 2
@@ -97,7 +97,7 @@ public enum OperationCode: Int, Codable, CaseIterable {
 }
 
 /// DNSSEC algorithms
-public enum DNSSECAlgorithm: UInt8, Codable {
+public enum DNSSECAlgorithm: UInt8, Codable, Sendable {
     case ECDSAP384_SHA384 = 14
     case ECDSAP256_SHA256 = 13
     case RSA_SHA512 = 10
@@ -110,7 +110,7 @@ public enum DNSSECAlgorithm: UInt8, Codable {
 }
 
 /// DNSSEC digest types
-public enum DNSSECDigest: UInt8, Codable {
+public enum DNSSECDigest: UInt8, Codable, Sendable {
     case SHA1 = 1
     case SHA256 = 2
     case SHA384 = 4

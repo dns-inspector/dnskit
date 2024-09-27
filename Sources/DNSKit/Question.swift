@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes a DNS question
-public struct Question {
+public struct Question: Sendable {
     /// The resource's name
     public let name: String
     /// The resource's record type

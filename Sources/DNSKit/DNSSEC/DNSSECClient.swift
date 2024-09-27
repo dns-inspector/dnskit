@@ -297,13 +297,14 @@ internal struct DNSSECClient {
     /// - Returns: An array of DNSSEC resources for each zone
     /// - Throws: Will throw on any error getting the data or if any required data is missing
     internal static func getKeyChain(startingAt name: String, client: IClient) throws -> [DNSSECResource] {
-        var names: [String] = []
+        let names = AtomicArray<String>(initialValue: [])
         var nextName = name
-        var questionsToSend = 0
-        var questionsAnswered = 0
+        let questionsToSend = AtomicInt(initialValue: 0)
+        let questionsAnswered = AtomicInt(initialValue: 0)
+
         while true {
-            names.append(nextName)
-            questionsToSend += 2 // DNSKEY + DS question per zone
+            names.Append(nextName)
+            _ = questionsToSend.IncrementAndGet(amount: 2) // DNSKEY + DS question per zone
 
             let nameParts = nextName.split(separator: ".")
             if nameParts.count == 0 || nameParts[0].count == 0 {
@@ -316,28 +317,26 @@ internal struct DNSSECClient {
             }
         }
 
-        var dnskeyErrors: [Int: Error] = [:]
-        var dsErrors: [Int: Error] = [:]
-        var dnskeyAnswers: [Int: [Answer]] = [:]
-        var dsAnswers: [Int: [Answer]] = [:]
+        let dnskeyErrors = AtomicMap<Int, Error>(initialValue: [:])
+        let dsErrors = AtomicMap<Int, Error>(initialValue: [:])
+        let dnskeyAnswers = AtomicMap<Int, [Answer]>(initialValue: [:])
+        let dsAnswers = AtomicMap<Int, [Answer]>(initialValue: [:])
 
-        let lock = NSObject()
         let sync = DispatchSemaphore(value: 0)
 
         // Get all the resource we need in parallel
-        for i in 0...names.count-1 {
+        for i in 0...names.Count()-1 {
+            let name = names.Get(i)
             // Get the DNSKEY for this zone
-            let dnskeyQuestion = Question(name: names[i], recordType: .DNSKEY, recordClass: .IN)
-            printDebug("[\(#fileID):\(#line)] Getting DNSKEY for \(names[i])")
+            let dnskeyQuestion = Question(name: name, recordType: .DNSKEY, recordClass: .IN)
+            printDebug("[\(#fileID):\(#line)] Getting DNSKEY for \(name)")
             let message = Message(question: dnskeyQuestion, dnssecOK: true)
             client.send(message: message) { result in
                 switch result {
                 case .success(let reply):
                     if reply.responseCode != .NOERROR {
-                        objc_sync_enter(lock)
-                        printError("[\(#fileID):\(#line)] No DNSKEY record for zone \(names[i])")
-                        dnskeyErrors[i] = Utils.MakeError("No DNSKEY record for zone \(names[i])")
-                        objc_sync_exit(lock)
+                        printError("[\(#fileID):\(#line)] No DNSKEY record for zone \(name)")
+                        dnskeyErrors.Set(i, Utils.MakeError("No DNSKEY record for zone \(name)"))
                         break
                     }
 
@@ -354,56 +353,44 @@ internal struct DNSSECClient {
                         }
                     }
 
-                    objc_sync_enter(lock)
                     if !hasDNSKEY {
-                        printError("[\(#fileID):\(#line)] No DNSKEY record for zone \(names[i])")
-                        dnskeyErrors[i] = Utils.MakeError("No DNSKEY record for zone \(names[i])")
+                        printError("[\(#fileID):\(#line)] No DNSKEY record for zone \(name)")
+                        dnskeyErrors.Set(i, Utils.MakeError("No DNSKEY record for zone \(name)"))
                     } else if !hasRRSIG {
-                        printError("[\(#fileID):\(#line)] No RRSIG record for zone \(names[i])")
-                        dnskeyErrors[i] = Utils.MakeError("No RRSIG record for zone \(names[i])")
+                        printError("[\(#fileID):\(#line)] No RRSIG record for zone \(name)")
+                        dnskeyErrors.Set(i, Utils.MakeError("No RRSIG record for zone \(name)"))
                     } else {
-                        printDebug("[\(#fileID):\(#line)] Fetched \(reply.answers.count) DNSKEYs for zone \(names[i])")
-                        dnskeyAnswers[i] = reply.answers
+                        printDebug("[\(#fileID):\(#line)] Fetched \(reply.answers.count) DNSKEYs for zone \(name)")
+                        dnskeyAnswers.Set(i, reply.answers)
                     }
-                    objc_sync_exit(lock)
                 case .failure(let error):
-                    objc_sync_enter(lock)
-                    printError("[\(#fileID):\(#line)] Error getting DNSKEY records for zone \(names[i])")
-                    dnskeyErrors[i] = error
-                    objc_sync_exit(lock)
+                    printError("[\(#fileID):\(#line)] Error getting DNSKEY records for zone \(name)")
+                    dnskeyErrors.Set(i, error)
                 }
 
-                objc_sync_enter(lock)
-                questionsAnswered += 1
-                if questionsAnswered >= questionsToSend {
+                if questionsAnswered.IncrementAndGet() >= questionsToSend.Get() {
                     sync.signal()
                 }
-                objc_sync_exit(lock)
             }
 
             // Root zone does not have a DS
-            if names[i].count == 1 && names[i] == "." {
-                objc_sync_enter(lock)
-                questionsAnswered += 1
-                if questionsAnswered >= questionsToSend {
+            if name.count == 1 && name == "." {
+                if questionsAnswered.IncrementAndGet() >= questionsToSend.Get() {
                     sync.signal()
                 }
-                objc_sync_exit(lock)
                 continue
             }
 
             // Get the DS record for this zone
-            let dsQuestion = Question(name: names[i], recordType: .DS, recordClass: .IN)
-            printDebug("[\(#fileID):\(#line)] Getting DS for \(names[i])")
+            let dsQuestion = Question(name: name, recordType: .DS, recordClass: .IN)
+            printDebug("[\(#fileID):\(#line)] Getting DS for \(name)")
             let dsMessage = Message(question: dsQuestion, dnssecOK: true)
             client.send(message: dsMessage) { result in
                 switch result {
                 case .success(let reply):
                     if reply.responseCode != .NOERROR {
-                        objc_sync_enter(lock)
-                        printError("[\(#fileID):\(#line)] No DS record for zone \(names[i])")
-                        dnskeyErrors[i] = Utils.MakeError("No DS record for zone \(names[i])")
-                        objc_sync_exit(lock)
+                        printError("[\(#fileID):\(#line)] No DS record for zone \(name)")
+                        dnskeyErrors.Set(i, Utils.MakeError("No DS record for zone \(name)"))
                         break
                     }
 
@@ -420,37 +407,29 @@ internal struct DNSSECClient {
                         }
                     }
 
-                    objc_sync_enter(lock)
                     if !hasDS {
-                        printError("[\(#fileID):\(#line)] No DS record for zone \(names[i])")
-                        dsErrors[i] = Utils.MakeError("No DS record for zone \(names[i])")
+                        printError("[\(#fileID):\(#line)] No DS record for zone \(name)")
+                        dsErrors.Set(i, Utils.MakeError("No DS record for zone \(name)"))
                     } else if !hasRRSIG {
-                        printError("[\(#fileID):\(#line)] No RRSIG record for zone \(names[i])")
-                        dsErrors[i] = Utils.MakeError("No RRSIG record for zone \(names[i])")
+                        printError("[\(#fileID):\(#line)] No RRSIG record for zone \(name)")
+                        dsErrors.Set(i, Utils.MakeError("No RRSIG record for zone \(name)"))
                     } else {
-                        printDebug("[\(#fileID):\(#line)] Fetched \(reply.answers.count) DSs for zone \(names[i])")
-                        dsAnswers[i] = reply.answers
+                        printDebug("[\(#fileID):\(#line)] Fetched \(reply.answers.count) DSs for zone \(name)")
+                        dsAnswers.Set(i, reply.answers)
                     }
-                    objc_sync_exit(lock)
                 case .failure(let error):
-                    objc_sync_enter(lock)
-                    printError("[\(#fileID):\(#line)] Error getting DS records for zone \(names[i])")
-                    dnskeyErrors[i] = error
-                    objc_sync_exit(lock)
+                    printError("[\(#fileID):\(#line)] Error getting DS records for zone \(name)")
+                    dsErrors.Set(i, error)
                 }
 
-                objc_sync_enter(lock)
-                questionsAnswered += 1
-                if questionsAnswered >= questionsToSend {
+                if questionsAnswered.IncrementAndGet() >= questionsToSend.Get() {
                     sync.signal()
                 }
-                objc_sync_exit(lock)
             }
         }
 
         _ = sync.wait(timeout: .now().adding(seconds: 10))
-
-        if questionsAnswered != questionsToSend {
+        if questionsAnswered.Get() != questionsToSend.Get() {
             printError("[\(#fileID):\(#line)] Unable to query for all records")
             printError("[\(#fileID):\(#line)] One or more DNSKEY or DS records or their associated signatures were not found")
             throw DNSSECError.missingKeys.error("One or more DNSKEY or DS records or their associated signatures were not found")
@@ -459,11 +438,11 @@ internal struct DNSSECClient {
         var resources: [DNSSECResource] = []
 
         // Sort through the answers and split up the DNSKEY, the RRSIG for the DNSKEY, and the same for the DS
-        for i in 0...names.count-1 {
-            let name = names[i]
+        for i in 0...names.Count()-1 {
+            let name = name
             var keys: [Answer] = []
             var oKeySig: Answer?
-            for answer in dnskeyAnswers[i] ?? [] {
+            for answer in dnskeyAnswers.Get(i) ?? [] {
                 if answer.recordType == .DNSKEY {
                     keys.append(answer)
                 } else if answer.recordType == .RRSIG {
@@ -478,7 +457,7 @@ internal struct DNSSECClient {
             var ds: Answer?
             var dsSig: Answer?
             if name.count > 1 {
-                for answer in dsAnswers[i] ?? [] {
+                for answer in dsAnswers.Get(i) ?? [] {
                     if answer.recordType == .DS {
                         ds = answer
                     } else if answer.recordType == .RRSIG {
@@ -494,7 +473,7 @@ internal struct DNSSECClient {
             resources.append(DNSSECResource(zone: name, dnsKeys: keys, keySignature: keySig, ds: ds, dsSignature: dsSig))
         }
 
-        printInformation("[\(#fileID):\(#line)] Fetched DNSKEY and DS for \(names.count) zones")
+        printInformation("[\(#fileID):\(#line)] Fetched DNSKEY and DS for \(names.Count()) zones")
         return resources
     }
 

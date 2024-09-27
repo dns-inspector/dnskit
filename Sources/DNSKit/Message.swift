@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes a DNS message
-public struct Message {
+public struct Message: Sendable {
     /// The message ID number
     public let idNumber: UInt16
     /// If recursion was desired
@@ -210,7 +210,7 @@ public struct Message {
         return (answers, answerStartOffset)
     }
 
-    internal func data() throws -> Data {
+    internal func data(withLength: Bool = false) throws -> Data {
         var request = Data()
 
         withUnsafePointer(to: self.idNumber.bigEndian) { idn in
@@ -255,6 +255,16 @@ public struct Message {
         // .. .... .... .. .. 8000 .... = DNSSEC OK (if DNSSEC was requsted, otherwise 0x0000)
         // .. .... .... .. .. .... 0000 = Data length 0
         request.append(Data([0x00, 0x00, 0x29, 0x10, 0x00, 0x00, 0x00, (self.dnssecOK ? 0x80 : 0x00), 0x00, 0x00, 0x00]))
+
+        if withLength {
+            var requestWithLength = Data()
+            let length = UInt16(request.count).bigEndian
+            withUnsafePointer(to: length) { p in
+                requestWithLength.append(Data(bytes: p, count: 2))
+            }
+            requestWithLength.append(request)
+            return requestWithLength
+        }
 
         return request
     }

@@ -17,8 +17,8 @@
 import Foundation
 
 /// Describes a timer for measuring the duration of an operation
-internal class Timer {
-    private var startTime: DispatchTime
+internal final class Timer: Sendable {
+    private let startTime: DispatchTime
 
     private init(startTime: DispatchTime) {
         self.startTime = startTime

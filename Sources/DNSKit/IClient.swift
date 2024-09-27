@@ -17,7 +17,7 @@
 import Foundation
 
 /// The internal DNS client protocol
-internal protocol IClient {
+internal protocol IClient: Sendable {
     /// Create a new instance of the DNS client
     /// - Parameters:
     ///   - address: The DNS server address
@@ -28,7 +28,7 @@ internal protocol IClient {
     /// - Parameters:
     ///   - message: The message to send
     ///   - complete: Callback called when complete, with either the response message or an error
-    func send(message: Message, complete: @escaping (Result<Message, Error>) -> Void)
+    func send(message: Message, complete: @Sendable @escaping (Result<Message, Error>) -> Void)
 
     /// Authenticate the given DNS message
     /// - Parameters:
@@ -37,5 +37,5 @@ internal protocol IClient {
     /// - Throws: Will throw on any fatal error while collecting required information.
     /// This method will perform multiple queries in relation to the number of zones within the name.
     /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
-    func authenticate(message: Message, complete: @escaping (DNSSECResult) -> Void) throws
+    func authenticate(message: Message, complete: @Sendable @escaping (DNSSECResult) -> Void) throws
 }

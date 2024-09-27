@@ -17,7 +17,7 @@
 import Foundation
 
 /// The DNS over HTTPS client.
-internal class HTTPClient: IClient {
+internal final class HTTPClient: IClient {
     fileprivate let url: URL
     fileprivate let transportOptions: TransportOptions
 
@@ -47,7 +47,7 @@ internal class HTTPClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @escaping (Result<Message, Error>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Message, Error>) -> Void) {
         let timer = Timer.start()
 
         let questionData: Data
@@ -134,7 +134,7 @@ internal class HTTPClient: IClient {
         }.resume()
     }
 
-    func authenticate(message: Message, complete: @escaping (DNSSECResult) -> Void) throws {
+    func authenticate(message: Message, complete: @Sendable @escaping (DNSSECResult) -> Void) throws {
         try DNSSECClient.authenticateMessage(message, client: self, complete: complete)
     }
 }
