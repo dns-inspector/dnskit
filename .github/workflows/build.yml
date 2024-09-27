@@ -25,7 +25,7 @@ env:
 
 jobs:
   build:
-    name: "Build App"
+    name: "Build Package"
     runs-on: macos-15
     steps:
       - name: Checkout Source

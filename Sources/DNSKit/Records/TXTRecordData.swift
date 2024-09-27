@@ -43,7 +43,9 @@ public struct TXTRecordData: RecordData {
 
             offset += 1
             let data = recordData.subdata(in: offset..<offset+Int(length))
-            let text = String(decoding: data, as: UTF8.self)
+            guard let text = String(data: data, encoding: .utf8) else {
+                throw Utils.MakeError("Unable to decode TXT RDATA as UTF8 bytes")
+            }
 
             recordText.append(text)
             offset += Int(length)
