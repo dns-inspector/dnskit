@@ -438,8 +438,8 @@ internal struct DNSSECClient {
         var resources: [DNSSECResource] = []
 
         // Sort through the answers and split up the DNSKEY, the RRSIG for the DNSKEY, and the same for the DS
-        for i in 0...names.Count()-1 {
-            let name = name
+        for i in 0..<names.Count() {
+            let name = names.Get(i)
             var keys: [Answer] = []
             var oKeySig: Answer?
             for answer in dnskeyAnswers.Get(i) ?? [] {
@@ -457,7 +457,11 @@ internal struct DNSSECClient {
             var ds: Answer?
             var dsSig: Answer?
             if name.count > 1 {
-                for answer in dsAnswers.Get(i) ?? [] {
+                guard let answers = dsAnswers.Get(i) else {
+                    printError("[\(#fileID):\(#line)] Missing RRSIG for DS \(name)")
+                    throw DNSSECError.missingKeys.error("Missing RRSIG for DS \(name)")
+                }
+                for answer in answers {
                     if answer.recordType == .DS {
                         ds = answer
                     } else if answer.recordType == .RRSIG {
