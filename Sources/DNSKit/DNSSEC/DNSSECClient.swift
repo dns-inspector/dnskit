@@ -607,7 +607,12 @@ internal struct DNSSECClient {
         if verified {
             printDebug("[\(#fileID):\(#line)] Signature validation passed")
         } else {
-            printError("[\(#fileID):\(#line)] Signature validation failed")
+            if log?.currentLevel() == .Debug {
+                printDebug("[\(#fileID):\(#line)] Public key: \(dnskey.publicKey.hexEncodedString())")
+                printDebug("[\(#fileID):\(#line)] Signed data: \(signedData.hexEncodedString())")
+                printDebug("[\(#fileID):\(#line)] Signature: \(signature.hexEncodedString())")
+            }
+            printError("[\(#fileID):\(#line)] Signature validation failed with algorithm \(String(describing: algorithm))")
             throw DNSSECError.signatureFailed.error("Signature validation failed")
         }
     }

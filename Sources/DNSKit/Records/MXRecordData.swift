@@ -17,11 +17,13 @@
 import Foundation
 
 /// Describes the record data for a MX record
-public struct MXRecordData: RecordData {
+public struct MXRecordData: RecordData, CompressibleRecordData {
     /// The record priority
     public let priority: UInt16
     /// The mail server name
     public let name: String
+
+    internal var uncompressedRecordData: Data
 
     internal init(messageData: Data, startOffset: Int) throws {
         let priority = messageData.withUnsafeBytes { data in
@@ -31,6 +33,10 @@ public struct MXRecordData: RecordData {
 
         self.priority = priority
         self.name = name
+
+        self.uncompressedRecordData = Data()
+        self.uncompressedRecordData.append(priority.bigEndian)
+        self.uncompressedRecordData.append(try Name.stringToName(name))
     }
 
     public var description: String {

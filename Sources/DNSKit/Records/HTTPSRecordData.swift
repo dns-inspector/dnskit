@@ -36,7 +36,7 @@ public enum HTTPVersions: String, Sendable {
 }
 
 /// Describes the record data for a HTTPS record
-public struct HTTPSRecordData: RecordData {
+public struct HTTPSRecordData: RecordData, CompressibleRecordData {
     /// The record priority
     public let priority: UInt16
     /// The record target
@@ -54,6 +54,8 @@ public struct HTTPSRecordData: RecordData {
     /// Encrypted client hello configuration
     public let ech: Data?
 
+    internal var uncompressedRecordData: Data
+
     internal init(recordData: Data) throws {
         self.priority = recordData.withUnsafeBytes {
             return $0.loadUnaligned(fromByteOffset: 0, as: UInt16.self).bigEndian
@@ -61,6 +63,12 @@ public struct HTTPSRecordData: RecordData {
 
         let (target, dataOffset) = try Name.readName(recordData, startOffset: 2)
         self.target = target
+
+        var uncompressedRecordData = Data()
+        uncompressedRecordData.append(self.priority.bigEndian)
+        uncompressedRecordData.append(try Name.stringToName(target))
+        uncompressedRecordData.append(recordData.suffix(from: dataOffset))
+        self.uncompressedRecordData = uncompressedRecordData
 
         var alpn: [HTTPVersions]?
         var noDefaultAlpn: Bool?

@@ -21,3 +21,9 @@ public protocol RecordData: Sendable {
     /// A textual representation of the record data. This is typically the same format as seen in the `dig` command-line tool.
     var description: String { get }
 }
+
+/// Describes a subset of ``RecordData`` where the data can contain a compressed object.
+internal protocol CompressibleRecordData: RecordData {
+    /// The uncompressed record data
+    var uncompressedRecordData: Data { get }
+}

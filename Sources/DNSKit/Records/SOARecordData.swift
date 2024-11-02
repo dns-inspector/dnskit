@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes the record data for a SOA record
-public struct SOARecordData: RecordData {
+public struct SOARecordData: RecordData, CompressibleRecordData {
     /// Primary nameserver
     public let mname: String
     /// Administrator email
@@ -32,6 +32,8 @@ public struct SOARecordData: RecordData {
     public let expire: Int32
     /// Negative response caching TTL
     public let minimum: UInt32
+
+    internal var uncompressedRecordData: Data
 
     internal init(messageData: Data, startOffset: Int) throws {
         let (mname, rnameOffset) = try Name.readName(messageData, startOffset: startOffset)
@@ -55,6 +57,11 @@ public struct SOARecordData: RecordData {
 
             return (serial, refresh, retry, expire, minimum)
         }
+
+        self.uncompressedRecordData = Data()
+        self.uncompressedRecordData.append(try Name.stringToName(mname))
+        self.uncompressedRecordData.append(try Name.stringToName(rname))
+        self.uncompressedRecordData.append(messageData.suffix(from: serialOffset).prefix(4*5))
 
         if let r = rname.range(of: ".") {
             rname = rname.replacingCharacters(in: r, with: "@")

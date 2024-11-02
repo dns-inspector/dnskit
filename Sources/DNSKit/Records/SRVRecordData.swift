@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes the record data for a SRV record
-public struct SRVRecordData: RecordData {
+public struct SRVRecordData: RecordData, CompressibleRecordData {
     /// The record priority
     public let priority: UInt16
     /// The record weight
@@ -26,6 +26,8 @@ public struct SRVRecordData: RecordData {
     public let port: UInt16
     /// The service host name
     public let name: String
+
+    internal var uncompressedRecordData: Data
 
     internal init(messageData: Data, startOffset: Int) throws {
         let (priority, weight, port) = messageData.withUnsafeBytes { data in
@@ -42,6 +44,9 @@ public struct SRVRecordData: RecordData {
         }
 
         let (name, _) = try Name.readName(messageData, startOffset: startOffset+6)
+
+        self.uncompressedRecordData = messageData.suffix(from: startOffset).prefix(6)
+        self.uncompressedRecordData.append(try Name.stringToName(name))
 
         self.priority = priority
         self.weight = weight

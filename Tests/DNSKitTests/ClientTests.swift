@@ -20,7 +20,8 @@ import XCTest
 protocol IClientTests {
     func testQuery() async throws
     func testQueryNXDOMAIN() async throws
-    func testAuthenticateMessage() async throws
+    func testAuthenticateMessageA() async throws
+    func testAuthenticateMessageSOA() async throws
     func testLocalRandomData() async throws
     func testLocalLengthOver() async throws
     func testLocalLengthUnder() async throws
@@ -55,8 +56,15 @@ final class ClientTests {
         XCTAssertEqual(reply.responseCode, .NXDOMAIN)
     }
 
-    func testAuthenticateMessage() async throws {
+    func testAuthenticateMessageA() async throws {
         let query = Query(client: client, recordType: .A, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
+        let reply = try await query.execute()
+        let result = try await query.authenticate(message: reply)
+        XCTAssertTrue(result.chainTrusted)
+    }
+
+    func testAuthenticateMessageSOA() async throws {
+        let query = Query(client: client, recordType: .SOA, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted)

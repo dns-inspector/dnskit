@@ -26,8 +26,12 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testQueryNXDOMAIN()
     }
 
-    func testAuthenticateMessage() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateMessage()
+    func testAuthenticateMessageA() async throws {
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateMessageA()
+    }
+
+    func testAuthenticateMessageSOA() async throws {
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateMessageSOA()
     }
 
     func testAuthenticateRoot() async throws {

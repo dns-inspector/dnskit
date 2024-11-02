@@ -93,8 +93,16 @@ public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertib
         data.append(self.recordType.rawValue.bigEndian)
         data.append(self.recordClass.rawValue.bigEndian)
         data.append(rrsig.ttlSeconds.bigEndian)
-        data.append(self.dataLength.bigEndian)
-        data.append(self.recordData)
+
+        let wireData: Data
+        // If the record type can contain compressed objects, we need to get the expanded record data instead
+        if let compressableRecord = self.data as? CompressibleRecordData {
+            wireData = compressableRecord.uncompressedRecordData
+        } else {
+            wireData = self.recordData
+        }
+        data.append(UInt16(wireData.count).bigEndian)
+        data.append(wireData)
 
         return data
     }
