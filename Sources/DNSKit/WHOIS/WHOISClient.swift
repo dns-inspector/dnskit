@@ -28,7 +28,7 @@ public struct WHOISClient: Sendable {
     ///
     /// > Tip: WHOIS data is always returned as an human-readable formatted string.
     @available(iOS 13.0, macOS 10.15, *)
-    public static func lookup(_ domain: String) async throws -> String {
+    public static func lookup(_ domain: String) async throws -> [WHOISReply] {
         return try await withCheckedThrowingContinuation { continuation in
             self.lookup(domain) { result in
                 continuation.resume(with: result)
@@ -42,7 +42,7 @@ public struct WHOISClient: Sendable {
     ///   - complete: Callback called when the lookup has completed with a result or an error.
     ///
     /// > Tip: WHOIS data is always returned as an human-readable formatted string.
-    public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<String, Error>) -> Void) {
+    public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<[WHOISReply], Error>) -> Void) {
         let (oServer, oBareDomain) = WHOISClient.getLookupHost(for: domain)
         guard let server = oServer else {
             printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
@@ -57,11 +57,13 @@ public struct WHOISClient: Sendable {
 
         DispatchQueue.global(qos: .userInitiated).async {
             printDebug("[\(#fileID):\(#line)] Performing WHOIS lookup for \(domain) on \(server)")
-            WHOISClient.lookup(bareDomain, server: server, depth: 1, complete: complete)
+
+            let result = AtomicArray<WHOISReply>(initialValue: [])
+            WHOISClient.lookup(bareDomain, server: server, depth: 1, result: result, complete: complete)
         }
     }
 
-    internal static func lookup(_ domain: String, server: String, depth: Int, complete: @Sendable @escaping (Result<String, Error>) -> Void) {
+    internal static func lookup(_ domain: String, server: String, depth: Int, result: AtomicArray<WHOISReply>, complete: @Sendable @escaping (Result<[WHOISReply], Error>) -> Void) {
         if depth > 10 {
             printError("[\(#fileID):\(#line)] Aborting WHOIS request due to too many redirects")
             complete(.failure(Utils.MakeError("Too many redirects")))
@@ -96,18 +98,21 @@ public struct WHOISClient: Sendable {
                     }
 
                     // Have to use NSString because NSRegularExpression behaves poorly with Swift's String
-                    let response = NSString(data: data, encoding: NSASCIIStringEncoding) ?? ""
+                    let response = NSString(data: data, encoding: NSUTF8StringEncoding) ?? ""
 
                     if log?.currentLevel() == .Debug {
                         printDebug("[\(#fileID):\(#line)] WHOIS response: \(response)")
                     }
+
+                    let reply = WHOISReply(server: server, data: response as String)
+                    result.Append(reply)
 
                     // Check if there is a server we should follow to
                     let nextServer = WHOISClient.findRedirectInResponse(response)
 
                     guard let followServer = nextServer else {
                         didComplete.If(false) {
-                            complete(.success(response as String))
+                            complete(.success(result.Get()))
                             connection.cancel()
                             return true
                         }
@@ -117,7 +122,7 @@ public struct WHOISClient: Sendable {
 
                     if followServer.lowercased() == server.lowercased() {
                         didComplete.If(false) {
-                            complete(.success(response as String))
+                            complete(.success(result.Get()))
                             connection.cancel()
                             return true
                         }
@@ -126,7 +131,7 @@ public struct WHOISClient: Sendable {
                     }
 
                     connection.cancel()
-                    WHOISClient.lookup(domain, server: followServer, depth: depth+1, complete: complete)
+                    WHOISClient.lookup(domain, server: followServer, depth: depth+1, result: result, complete: complete)
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
