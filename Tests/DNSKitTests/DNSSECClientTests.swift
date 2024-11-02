@@ -19,7 +19,9 @@ import XCTest
 
 final class DNSSECClientTests: XCTestCase {
     func validateWithMessage(_ message: Message) throws {
-        let rrsigAnswer = message.answers.first(where: { answer in answer.recordType == .RRSIG })!
+        guard let rrsigAnswer = message.answers.first(where: { answer in answer.recordType == .RRSIG }) else {
+            fatalError("No RRSIG answer")
+        }
         let rrsig = rrsigAnswer.data as! RRSIGRecordData
 
         var dnskeyAnswer: Answer!

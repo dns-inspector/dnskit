@@ -206,6 +206,12 @@ internal struct DNSSECClient {
             }
         }
 
+        // Only perform chain verification if there is a chain to verify
+        if message.questions.first?.name == "." {
+            result.chainTrusted = result.signatureVerified
+            return result
+        }
+
         // Verify the DS record of each parent zone, until the root
         for i in 0...resources.count-2 { // -2 because the root doesn't have a DS
             guard let dsAnswer = resources[i].ds else {

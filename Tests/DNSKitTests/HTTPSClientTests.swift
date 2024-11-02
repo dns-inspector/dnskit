@@ -30,6 +30,10 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateMessage()
     }
 
+    func testAuthenticateRoot() async throws {
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateRoot()
+    }
+
     func testLocalControl() async throws {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query").testLocalControl()
     }

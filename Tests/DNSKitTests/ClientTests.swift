@@ -62,6 +62,13 @@ final class ClientTests {
         XCTAssertTrue(result.chainTrusted)
     }
 
+    func testAuthenticateRoot() async throws {
+        let query = Query(client: client, recordType: .SOA, name: ".", queryOptions: QueryOptions(dnssecRequested: true))
+        let reply = try await query.execute()
+        let result = try await query.authenticate(message: reply)
+        XCTAssertTrue(result.chainTrusted)
+    }
+
     func testLocalControl() async throws {
         let query = Query(client: client, recordType: .A, name: "control.example.com")
         let reply = try await query.execute()
