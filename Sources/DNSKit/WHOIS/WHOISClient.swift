@@ -18,7 +18,7 @@ import Foundation
 import Network
 
 /// WHOIS related utilities
-public struct WHOIS: Sendable {
+public struct WHOISClient: Sendable {
     private static let registrarLinePattern = NSRegularExpression("registrar whois server:.*\r?\n", options: .caseInsensitive)
 
     /// Perform a WHOIS lookup on the given domain name
@@ -43,7 +43,7 @@ public struct WHOIS: Sendable {
     ///
     /// > Tip: WHOIS data is always returned as an human-readable formatted string.
     public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<String, Error>) -> Void) {
-        let (oServer, oBareDomain) = WHOIS.getLookupHost(for: domain)
+        let (oServer, oBareDomain) = WHOISClient.getLookupHost(for: domain)
         guard let server = oServer else {
             printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
             complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
@@ -57,7 +57,7 @@ public struct WHOIS: Sendable {
 
         DispatchQueue.global(qos: .userInitiated).async {
             printDebug("[\(#fileID):\(#line)] Performing WHOIS lookup for \(domain) on \(server)")
-            WHOIS.lookup(bareDomain, server: server, depth: 1, complete: complete)
+            WHOISClient.lookup(bareDomain, server: server, depth: 1, complete: complete)
         }
     }
 
@@ -103,7 +103,7 @@ public struct WHOIS: Sendable {
                     }
 
                     // Check if there is a server we should follow to
-                    let nextServer = WHOIS.findRedirectInResponse(response)
+                    let nextServer = WHOISClient.findRedirectInResponse(response)
 
                     guard let followServer = nextServer else {
                         didComplete.If(false) {
@@ -126,7 +126,7 @@ public struct WHOIS: Sendable {
                     }
 
                     connection.cancel()
-                    WHOIS.lookup(domain, server: followServer, depth: depth+1, complete: complete)
+                    WHOISClient.lookup(domain, server: followServer, depth: depth+1, complete: complete)
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
@@ -169,7 +169,7 @@ public struct WHOIS: Sendable {
         var tld = String(last)
 
         // First check if the domain uses a gTLD. gTLD's are always one-level
-        let newGtlds = WHOIS.getNewGtlds()
+        let newGtlds = WHOISClient.getNewGtlds()
         for gtld in newGtlds {
             if gtld != tld {
                 continue
@@ -179,7 +179,7 @@ public struct WHOIS: Sendable {
             return ("whois.nic.\(tld)", bareDomain)
         }
 
-        let tldServ = WHOIS.getTldServ()
+        let tldServ = WHOISClient.getTldServ()
 
         // Next iterate through each part of the input domain name, cutting off one part each time until we find a match
         // or we've run out of parts of the name.
@@ -201,7 +201,7 @@ public struct WHOIS: Sendable {
     }
 
     internal static func findRedirectInResponse(_ reply: NSString) -> String? {
-        guard let match = WHOIS.registrarLinePattern.firstMatch(in: reply as String, range: NSRange(location: 0, length: reply.length)) else {
+        guard let match = WHOISClient.registrarLinePattern.firstMatch(in: reply as String, range: NSRange(location: 0, length: reply.length)) else {
             return nil
         }
 

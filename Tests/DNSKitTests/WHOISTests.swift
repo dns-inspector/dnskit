@@ -19,7 +19,7 @@ import XCTest
 
 final class WHOISTests: XCTestCase {
     func getLookupHostForDomain(_ input: String, expectedServer: String, expectedBare: String) {
-        let (actualServer, actualBare) = WHOIS.getLookupHost(for: input)
+        let (actualServer, actualBare) = WHOISClient.getLookupHost(for: input)
 
         XCTAssertNotNil(actualServer)
         XCTAssertNotNil(actualBare)
@@ -35,23 +35,23 @@ final class WHOISTests: XCTestCase {
         getLookupHostForDomain("example.example.example.app", expectedServer: "whois.nic.app", expectedBare: "example.app")
 
         // lmao please im begging you somebody register acab as a gtld
-        let (server, bare) = WHOIS.getLookupHost(for: "blm.acab")
+        let (server, bare) = WHOISClient.getLookupHost(for: "blm.acab")
         XCTAssertNil(server)
         XCTAssertNil(bare)
     }
 
     func testWHOISLookup() async throws {
-        let result = try await WHOIS.lookup("example.com")
+        let result = try await WHOISClient.lookup("example.com")
         XCTAssertTrue(result.count > 0)
     }
 
     func testFindRedirect() {
         let replyCRLF: NSString = "Domain Name: foo.bar\r\nRegistrar WHOIS Server: whois.example.com\r\nRegistrar URL: http://www.example.com\r\n"
-        let redirectCRLF = WHOIS.findRedirectInResponse(replyCRLF)
+        let redirectCRLF = WHOISClient.findRedirectInResponse(replyCRLF)
         XCTAssertEqual(redirectCRLF, "whois.example.com")
 
         let replyLF: NSString = "Domain Name: foo.bar\nRegistrar WHOIS Server: whois.example.com\nRegistrar URL: http://www.example.com\n"
-        let redirectLF = WHOIS.findRedirectInResponse(replyLF)
+        let redirectLF = WHOISClient.findRedirectInResponse(replyLF)
         XCTAssertEqual(redirectLF, "whois.example.com")
     }
 }
