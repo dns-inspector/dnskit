@@ -58,20 +58,33 @@ public struct WHOISClient: Sendable {
         DispatchQueue.global(qos: .userInitiated).async {
             printDebug("[\(#fileID):\(#line)] Performing WHOIS lookup for \(domain) on \(server)")
 
-            let result = AtomicArray<WHOISReply>(initialValue: [])
-            WHOISClient.lookup(bareDomain, server: server, depth: 1, result: result, complete: complete)
+            let didComplete = AtomicBool(initialValue: false)
+            let semaphore = DispatchSemaphore(value: 0)
+
+            let replies = AtomicArray<WHOISReply>(initialValue: [])
+            WHOISClient.lookup(bareDomain, server: server, depth: 1, replies: replies) { result in
+                didComplete.If(false) {
+                    complete(result)
+                    return true
+                }
+                semaphore.signal()
+            }
+
+            _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 5))
+            didComplete.If(false) {
+                printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): timed out")
+                complete(.failure(Utils.MakeError("Timed out")))
+                return true
+            }
         }
     }
 
-    internal static func lookup(_ domain: String, server: String, depth: Int, result: AtomicArray<WHOISReply>, complete: @Sendable @escaping (Result<[WHOISReply], Error>) -> Void) {
+    internal static func lookup(_ domain: String, server: String, depth: Int, replies: AtomicArray<WHOISReply>, complete: @Sendable @escaping (Result<[WHOISReply], Error>) -> Void) {
         if depth > 10 {
             printError("[\(#fileID):\(#line)] Aborting WHOIS request due to too many redirects")
             complete(.failure(Utils.MakeError("Too many redirects")))
             return
         }
-
-        let semaphore = DispatchSemaphore(value: 0)
-        let didComplete = AtomicBool(initialValue: false)
 
         printDebug("[\(#fileID):\(#line)] Connecting to \(server):43...")
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host.name(server, nil), port: NWEndpoint.Port(rawValue: 43)!)
@@ -82,6 +95,7 @@ public struct WHOISClient: Sendable {
             case .failed(let error):
                 printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
                 complete(.failure(error))
+                connection.cancel()
             case .ready:
                 connection.receive(minimumIncompleteLength: 2, maximumLength: 4096) { oContent, _, _, oError in
                     if let error = oError {
@@ -105,39 +119,32 @@ public struct WHOISClient: Sendable {
                     }
 
                     let reply = WHOISReply(server: server, data: response as String)
-                    result.Append(reply)
+                    replies.Append(reply)
 
                     // Check if there is a server we should follow to
                     let nextServer = WHOISClient.findRedirectInResponse(response)
 
                     guard let followServer = nextServer else {
-                        didComplete.If(false) {
-                            complete(.success(result.Get()))
-                            connection.cancel()
-                            return true
-                        }
-                        semaphore.signal()
+                        complete(.success(replies.Get()))
+                        connection.cancel()
                         return
                     }
 
                     if followServer.lowercased() == server.lowercased() {
-                        didComplete.If(false) {
-                            complete(.success(result.Get()))
-                            connection.cancel()
-                            return true
-                        }
-                        semaphore.signal()
+                        complete(.success(replies.Get()))
+                        connection.cancel()
                         return
                     }
 
                     connection.cancel()
-                    WHOISClient.lookup(domain, server: followServer, depth: depth+1, result: result, complete: complete)
+                    WHOISClient.lookup(domain, server: followServer, depth: depth+1, replies: replies, complete: complete)
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
                         printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
                         complete(.failure(error))
                         connection.cancel()
+                        return
                     }
                 }))
             default:
@@ -145,13 +152,6 @@ public struct WHOISClient: Sendable {
             }
         }
         connection.start(queue: DispatchQueue.global(qos: .userInitiated))
-        _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 5))
-        didComplete.If(false) {
-            printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): timed out")
-            complete(.failure(Utils.MakeError("Timed out")))
-            connection.cancel()
-            return true
-        }
     }
 
     /// Get the WHOIS server address for the given domain name.
