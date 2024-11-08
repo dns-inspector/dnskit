@@ -10,16 +10,21 @@ DNSKit provides a wire array of support acorss the DNS ecosystem, including:
 - Support for DNS over HTTPS and DNS over TLS
 - TCP and UDP support for traditional DNS servers
 - Full DNSSEC signature validation & chain trust establishment
+- WHOIS client for domain information
 
 ### License
 
 DNSKit is licnesed under the GNU Lesser General Public License 3.0 (LGPL3), an extension of the GNU General Public License 3.0 (GPL).
 
-**It's important that you understand the requirements of these licenses before using DNSKit in your project!**
+> [!WARNING]  
+> It's important that you understand the requirements of these licenses before using DNSKit in your project!
 
 ## Usage
 
 DNSKit provides a modern swift-focused API for interacting with DNS queries and responses.
+
+> [!WARNING]  
+> DNSKit does not offer API stability between releases. Always be sure to review the release notes carefully to understand what changes you will need to make.
 
 ### Get an IPv4 address of a host
 
