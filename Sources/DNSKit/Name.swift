@@ -40,7 +40,7 @@ public class Name {
             }
 
             if label.count > 63 {
-                throw Utils.MakeError("Invalid DNS name: individual label exceeds 63 characters")
+                throw DNSKitError.invalidData("Invalid DNS name: individual label exceeds 63 characters")
             }
 
             let length = UInt8(label.count)
@@ -67,7 +67,7 @@ public class Name {
     /// - Returns: A tuple of the DNS name and the offset of where to continue reading data after this name has ended.
     public static func readName(_ data: Data, startOffset: Int) throws -> (name: String, dataOffset: Int) {
         if startOffset < 0 || startOffset >= data.count {
-            throw Utils.MakeError("Invalid start offset when reading DNS name")
+            throw DNSKitError.invalidData("Invalid start offset when reading DNS name")
         }
 
         return try data.withUnsafeBytes { buffer in
@@ -98,12 +98,12 @@ public class Name {
                     // Continue to follow pointers until we get to a length, up to a maximum depth of 10
                     while (pointerFlag & (1 << 7)) != 0 {
                         if depth > 10 {
-                            throw Utils.MakeError("Maximum pointer depth reached")
+                            throw DNSKitError.invalidData("Maximum pointer depth reached")
                         }
 
                         nextOffset = Int(buffer[offset+1...offset+1].load(as: UInt8.self))
                         if nextOffset > data.count-1 {
-                            throw Utils.MakeError("Pointer offset outside of data bounds")
+                            throw DNSKitError.invalidData("Pointer offset outside of data bounds")
                         }
 
                         pointerFlag = buffer[nextOffset...nextOffset].load(as: UInt8.self)
@@ -117,16 +117,16 @@ public class Name {
                 offset += 1
 
                 if offset+Int(length) > data.count-1 {
-                    throw Utils.MakeError("Length or offset outside of data bounds")
+                    throw DNSKitError.invalidData("Length or offset outside of data bounds")
                 }
 
                 guard let label = String(data: data[offset...offset+Int(length)-1], encoding: .ascii) else {
-                    throw Utils.MakeError("Invalid data in label text")
+                    throw DNSKitError.invalidData("Invalid data in label text")
                 }
                 offset += Int(length)
 
                 if label.contains(".") {
-                    throw Utils.MakeError("Illegal characters in label text")
+                    throw DNSKitError.invalidData("Illegal characters in label text")
                 }
 
                 name.append("\(label).")

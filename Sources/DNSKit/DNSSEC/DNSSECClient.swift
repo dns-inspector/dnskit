@@ -33,7 +33,7 @@ internal struct DNSSECClient {
 
             guard let data = answer.data as? RRSIGRecordData else {
                 printError("[\(#fileID):\(#line)] Invalid RRSIG data")
-                throw DNSSECError.invalidResponse.error("Invalid RRSIG data")
+                throw DNSSECError.invalidResponse("Invalid RRSIG data")
             }
 
             oRrsigData = data
@@ -42,7 +42,7 @@ internal struct DNSSECClient {
 
         guard let rrsigData = oRrsigData else {
             printError("[\(#fileID):\(#line)] No record signature included in message")
-            throw DNSSECError.invalidResponse.error("No record signature included in message")
+            throw DNSSECError.invalidResponse("No record signature included in message")
         }
 
         switch rrsigData.algorithm {
@@ -50,7 +50,7 @@ internal struct DNSSECClient {
             break
         default:
             printError("[\(#fileID):\(#line)] Unsupported or unknown algorithm")
-            throw DNSSECError.unsupportedAlgorithm.error("Unsupported or unknown algorithm")
+            throw DNSSECError.unsupportedAlgorithm("Unsupported or unknown algorithm")
         }
 
         let resources: [DNSSECResource]
@@ -58,11 +58,16 @@ internal struct DNSSECClient {
             resources = try DNSSECClient.getKeyChain(startingAt: rrsigData.signerName, client: client)
             if resources.count == 0 {
                 printError("[\(#fileID):\(#line)] No signing keys found")
-                throw DNSSECError.missingKeys.error("No signing keys found")
+                throw DNSSECError.missingKeys("No signing keys found")
             }
         } catch {
             var result = DNSSECResult()
-            result.signatureError = error
+            if let error = error as? DNSSECError {
+                result.signatureError = error
+            } else {
+                printError("[\(#fileID):\(#line)] DNSSECClient.getKeyChain threw non DNSSECError type: \(error)")
+                result.signatureError = .internalError(nil)
+            }
             complete(result)
             return
         }
@@ -82,7 +87,7 @@ internal struct DNSSECClient {
         // Double check that the root KSK is what we expect
         guard let rootResource = resources.last else {
             printError("[\(#fileID):\(#line)] No signing keys found")
-            throw DNSSECError.missingKeys.error("No signing keys found")
+            throw DNSSECError.missingKeys("No signing keys found")
         }
         var foundRootKsk = false
         for rootKeyAnswer in rootResource.dnsKeys {
@@ -99,13 +104,13 @@ internal struct DNSSECClient {
                 printError("[\(#fileID):\(#line)] Untrusted root key signing key")
                 printDebug("[\(#fileID):\(#line)] Ksk from response: \(data.publicKey.hexEncodedString())")
                 printDebug("[\(#fileID):\(#line)] Trusted root ksk: \(DNSSECClient.trustedRootKsk().hexEncodedString())")
-                result.chainError = DNSSECError.untrustedRootSigningKey.error("Untrusted root key signing key")
+                result.chainError = DNSSECError.untrustedRootSigningKey("Untrusted root key signing key")
                 return result
             }
         }
         if !foundRootKsk {
             printError("[\(#fileID):\(#line)] Unable to locate root key signing key")
-            result.chainError = DNSSECError.untrustedRootSigningKey.error("Untrusted root key signing key")
+            result.chainError = DNSSECError.untrustedRootSigningKey("Untrusted root key signing key")
             return result
         }
 
@@ -131,13 +136,13 @@ internal struct DNSSECClient {
 
             guard let rrsigAnswer = oRrsigAnswer else {
                 printError("[\(#fileID):\(#line)] No signature for associated resource record")
-                result.signatureError = DNSSECError.noSignatures.error("No signature for associated resource record")
+                result.signatureError = DNSSECError.noSignatures("No signature for associated resource record")
                 return result
             }
 
             guard let rrsig = rrsigAnswer.data as? RRSIGRecordData else {
                 printError("[\(#fileID):\(#line)] No signature for associated resource record")
-                result.signatureError = DNSSECError.noSignatures.error("No signature for associated resource record")
+                result.signatureError = DNSSECError.noSignatures("No signature for associated resource record")
                 return result
             }
 
@@ -155,7 +160,7 @@ internal struct DNSSECClient {
             }
             guard let zsk = oZsk else {
                 printError("[\(#fileID):\(#line)] No key with tag \(rrsig.keyTag) found on zone \(resources[0].zone)")
-                result.signatureError = DNSSECError.missingKeys.error("No matching key found")
+                result.signatureError = DNSSECError.missingKeys("No matching key found")
                 return result
             }
 
@@ -163,7 +168,12 @@ internal struct DNSSECClient {
                 try DNSSECClient.validateAnswers(rrset, signatureAnswer: rrsigAnswer, dnskeyAnswer: zsk)
             } catch {
                 printError("[\(#fileID):\(#line)] RRSIG validation failure for rrset record in \(rrset[0].name)")
-                result.signatureError = error
+                if let error = error as? DNSSECError {
+                    result.signatureError = error
+                } else {
+                    printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
+                    result.signatureError = .internalError(nil)
+                }
                 return result
             }
 
@@ -176,7 +186,7 @@ internal struct DNSSECClient {
             let rrsigAnswer = resources[0].keySignature
             guard let rrsig = rrsigAnswer.data as? RRSIGRecordData else {
                 printError("[\(#fileID):\(#line)] No signature for associated resource record")
-                result.signatureError = DNSSECError.noSignatures.error("No signature for associated resource record")
+                result.signatureError = DNSSECError.noSignatures("No signature for associated resource record")
                 return result
             }
 
@@ -193,7 +203,7 @@ internal struct DNSSECClient {
             }
             guard let ksk = oKsk else {
                 printError("[\(#fileID):\(#line)] No key with tag \(rrsig.keyTag) found on zone")
-                result.signatureError = DNSSECError.missingKeys.error("No matching key found")
+                result.signatureError = DNSSECError.missingKeys("No matching key found")
                 return result
             }
 
@@ -201,7 +211,12 @@ internal struct DNSSECClient {
                 try DNSSECClient.validateAnswers(keyAnswers, signatureAnswer: rrsigAnswer, dnskeyAnswer: ksk)
             } catch {
                 printError("[\(#fileID):\(#line)] RRSIG validation failure for DNSKEY record in \(keyAnswers[0].name)")
-                result.signatureError = error
+                if let error = error as? DNSSECError {
+                    result.signatureError = error
+                } else {
+                    printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
+                    result.signatureError = .internalError(nil)
+                }
                 return result
             }
         }
@@ -216,12 +231,12 @@ internal struct DNSSECClient {
         for i in 0...resources.count-2 { // -2 because the root doesn't have a DS
             guard let dsAnswer = resources[i].ds else {
                 printError("[\(#fileID):\(#line)] Missing required DS record for zone \(resources[i].zone)")
-                result.chainError = DNSSECError.noSignatures.error("Missing required DS record")
+                result.chainError = DNSSECError.noSignatures("Missing required DS record")
                 return result
             }
             guard let ds = dsAnswer.data as? DSRecordData else {
                 printError("[\(#fileID):\(#line)] Missing required DS record \(resources[i].zone)")
-                result.chainError = DNSSECError.noSignatures.error("Missing required DS record")
+                result.chainError = DNSSECError.noSignatures("Missing required DS record")
                 return result
             }
 
@@ -248,20 +263,20 @@ internal struct DNSSECClient {
 
                 if !digestMatched {
                     printError("[\(#fileID):\(#line)] No matching DNSKEY found from DS digest")
-                    result.chainError = DNSSECError.missingKeys.error("Unknown DNSKEY referenced in DS record")
+                    result.chainError = DNSSECError.missingKeys("Unknown DNSKEY referenced in DS record")
                     return result
                 }
             }
 
             guard let rrsigAnswer = resources[i].dsSignature else {
                 printError("[\(#fileID):\(#line)] Missing DS record signature")
-                result.signatureError = DNSSECError.noSignatures.error("Missing DS record signature")
+                result.signatureError = DNSSECError.noSignatures("Missing DS record signature")
                 return result
             }
 
             guard let rrsig = rrsigAnswer.data as? RRSIGRecordData else {
                 printError("[\(#fileID):\(#line)] Missing DS record signature")
-                result.signatureError = DNSSECError.noSignatures.error("Missing DS record signature")
+                result.signatureError = DNSSECError.noSignatures("Missing DS record signature")
                 return result
             }
 
@@ -278,7 +293,7 @@ internal struct DNSSECClient {
             }
             if dnskeyAnswer == nil {
                 printError("[\(#fileID):\(#line)] No key with tag \(rrsig.keyTag) found on zone")
-                result.chainError = DNSSECError.missingKeys.error("Missing DNSKEY for RRSIG")
+                result.chainError = DNSSECError.missingKeys("Missing DNSKEY for RRSIG")
                 return result
             }
 
@@ -287,7 +302,12 @@ internal struct DNSSECClient {
                 try DNSSECClient.validateAnswers([dsAnswer], signatureAnswer: rrsigAnswer, dnskeyAnswer: dnskeyAnswer!)
             } catch {
                 printError("[\(#fileID):\(#line)] RRSIG validation failure for DS record in \(dsAnswer.name)")
-                result.chainError = error
+                if let error = error as? DNSSECError {
+                    result.chainError = error
+                } else {
+                    printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
+                    result.chainError = .internalError(nil)
+                }
                 return result
             }
             result.chainTrusted = true
@@ -323,8 +343,8 @@ internal struct DNSSECClient {
             }
         }
 
-        let dnskeyErrors = AtomicMap<Int, Error>(initialValue: [:])
-        let dsErrors = AtomicMap<Int, Error>(initialValue: [:])
+        let dnskeyErrors = AtomicMap<Int, DNSKitError>(initialValue: [:])
+        let dsErrors = AtomicMap<Int, DNSKitError>(initialValue: [:])
         let dnskeyAnswers = AtomicMap<Int, [Answer]>(initialValue: [:])
         let dsAnswers = AtomicMap<Int, [Answer]>(initialValue: [:])
 
@@ -342,7 +362,7 @@ internal struct DNSSECClient {
                 case .success(let reply):
                     if reply.responseCode != .NOERROR {
                         printError("[\(#fileID):\(#line)] No DNSKEY record for zone \(name)")
-                        dnskeyErrors.Set(i, Utils.MakeError("No DNSKEY record for zone \(name)"))
+                        dnskeyErrors.Set(i, .missingData("No DNSKEY record for zone \(name)"))
                         break
                     }
 
@@ -361,10 +381,10 @@ internal struct DNSSECClient {
 
                     if !hasDNSKEY {
                         printError("[\(#fileID):\(#line)] No DNSKEY record for zone \(name)")
-                        dnskeyErrors.Set(i, Utils.MakeError("No DNSKEY record for zone \(name)"))
+                        dnskeyErrors.Set(i, .missingData("No DNSKEY record for zone \(name)"))
                     } else if !hasRRSIG {
                         printError("[\(#fileID):\(#line)] No RRSIG record for zone \(name)")
-                        dnskeyErrors.Set(i, Utils.MakeError("No RRSIG record for zone \(name)"))
+                        dnskeyErrors.Set(i, .missingData("No RRSIG record for zone \(name)"))
                     } else {
                         printDebug("[\(#fileID):\(#line)] Fetched \(reply.answers.count) DNSKEYs for zone \(name)")
                         dnskeyAnswers.Set(i, reply.answers)
@@ -396,7 +416,7 @@ internal struct DNSSECClient {
                 case .success(let reply):
                     if reply.responseCode != .NOERROR {
                         printError("[\(#fileID):\(#line)] No DS record for zone \(name)")
-                        dnskeyErrors.Set(i, Utils.MakeError("No DS record for zone \(name)"))
+                        dnskeyErrors.Set(i, .missingData("No DS record for zone \(name)"))
                         break
                     }
 
@@ -415,10 +435,10 @@ internal struct DNSSECClient {
 
                     if !hasDS {
                         printError("[\(#fileID):\(#line)] No DS record for zone \(name)")
-                        dsErrors.Set(i, Utils.MakeError("No DS record for zone \(name)"))
+                        dsErrors.Set(i, .missingData("No DS record for zone \(name)"))
                     } else if !hasRRSIG {
                         printError("[\(#fileID):\(#line)] No RRSIG record for zone \(name)")
-                        dsErrors.Set(i, Utils.MakeError("No RRSIG record for zone \(name)"))
+                        dsErrors.Set(i, .missingData("No RRSIG record for zone \(name)"))
                     } else {
                         printDebug("[\(#fileID):\(#line)] Fetched \(reply.answers.count) DSs for zone \(name)")
                         dsAnswers.Set(i, reply.answers)
@@ -438,7 +458,7 @@ internal struct DNSSECClient {
         if questionsAnswered.Get() != questionsToSend.Get() {
             printError("[\(#fileID):\(#line)] Unable to query for all records")
             printError("[\(#fileID):\(#line)] One or more DNSKEY or DS records or their associated signatures were not found")
-            throw DNSSECError.missingKeys.error("One or more DNSKEY or DS records or their associated signatures were not found")
+            throw DNSSECError.missingKeys("One or more DNSKEY or DS records or their associated signatures were not found")
         }
 
         var resources: [DNSSECResource] = []
@@ -457,7 +477,7 @@ internal struct DNSSECClient {
             }
             guard let keySig = oKeySig else {
                 printError("[\(#fileID):\(#line)] Missing RRSIG for DNSKEY \(name)")
-                throw DNSSECError.missingKeys.error("Missing RRSIG for DNSKEY \(name)")
+                throw DNSSECError.missingKeys("Missing RRSIG for DNSKEY \(name)")
             }
 
             var ds: Answer?
@@ -465,7 +485,7 @@ internal struct DNSSECClient {
             if name.count > 1 {
                 guard let answers = dsAnswers.Get(i) else {
                     printError("[\(#fileID):\(#line)] Missing RRSIG for DS \(name)")
-                    throw DNSSECError.missingKeys.error("Missing RRSIG for DS \(name)")
+                    throw DNSSECError.missingKeys("Missing RRSIG for DS \(name)")
                 }
                 for answer in answers {
                     if answer.recordType == .DS {
@@ -476,7 +496,7 @@ internal struct DNSSECClient {
                 }
                 if dsSig == nil {
                     printError("[\(#fileID):\(#line)] Missing RRSIG for DS \(name)")
-                    throw DNSSECError.missingKeys.error("Missing RRSIG for DS \(name)")
+                    throw DNSSECError.missingKeys("Missing RRSIG for DS \(name)")
                 }
             }
 
@@ -496,74 +516,74 @@ internal struct DNSSECClient {
     internal static func validateAnswers(_ answers: [Answer], signatureAnswer: Answer, dnskeyAnswer: Answer) throws {
         if answers.count == 0 {
             printError("[\(#fileID):\(#line)] Empty rrset")
-            throw DNSSECError.invalidResponse.error("Empty rrset")
+            throw DNSSECError.invalidResponse("Empty rrset")
         }
 
         // All answers must have the same name, type, and class
         for i in 0...answers.count-1 {
             if answers[i].name != answers[0].name {
                 printError("[\(#fileID):\(#line)] Mismatches names in rrset")
-                throw DNSSECError.invalidResponse.error("Mismatches names in rrset")
+                throw DNSSECError.invalidResponse("Mismatches names in rrset")
             }
             if answers[i].recordType != answers[0].recordType {
                 printError("[\(#fileID):\(#line)] Mismatches types in rrset")
-                throw DNSSECError.invalidResponse.error("Mismatches types in rrset")
+                throw DNSSECError.invalidResponse("Mismatches types in rrset")
             }
             if answers[i].recordClass != answers[0].recordClass {
                 printError("[\(#fileID):\(#line)] Mismatches classes in rrset")
-                throw DNSSECError.invalidResponse.error("Mismatches classes in rrset")
+                throw DNSSECError.invalidResponse("Mismatches classes in rrset")
             }
         }
 
         guard let rrsig = signatureAnswer.data as? RRSIGRecordData else {
             printError("[\(#fileID):\(#line)] Incorrect RRSIG record data")
-            throw DNSSECError.noSignatures.error("Incorrect RRSIG record data")
+            throw DNSSECError.noSignatures("Incorrect RRSIG record data")
         }
         guard let dnskey = dnskeyAnswer.data as? DNSKEYRecordData else {
             printError("[\(#fileID):\(#line)] Incorrect DNSKEY record data")
-            throw DNSSECError.noSignatures.error("Incorrect DNSKEY record data")
+            throw DNSSECError.noSignatures("Incorrect DNSKEY record data")
         }
 
         if rrsig.keyTag != dnskey.keyTag {
             printError("[\(#fileID):\(#line)] Mismatched keytag from signature")
-            throw DNSSECError.badSigningKey.error("Mismatched keytag from signature")
+            throw DNSSECError.badSigningKey("Mismatched keytag from signature")
         }
         if signatureAnswer.recordClass != dnskeyAnswer.recordClass {
             printError("[\(#fileID):\(#line)] Mismatched record class from signature")
-            throw DNSSECError.badSigningKey.error("Mismatched record class from signature")
+            throw DNSSECError.badSigningKey("Mismatched record class from signature")
         }
         if rrsig.algorithm != dnskey.algorithm {
             printError("[\(#fileID):\(#line)] Mismatched algorithm from signature")
-            throw DNSSECError.badSigningKey.error("Mismatched algorithm from signature")
+            throw DNSSECError.badSigningKey("Mismatched algorithm from signature")
         }
         if rrsig.signerName.lowercased() != dnskeyAnswer.name.lowercased() {
             printError("[\(#fileID):\(#line)] Mismatched signer name from signature")
-            throw DNSSECError.badSigningKey.error("Mismatched signer name from signature")
+            throw DNSSECError.badSigningKey("Mismatched signer name from signature")
         }
         if dnskey.keyProtocol != 3 {
             printError("[\(#fileID):\(#line)] Unknown key protocol")
-            throw DNSSECError.badSigningKey.error("Unknown key protocol")
+            throw DNSSECError.badSigningKey("Unknown key protocol")
         }
         if !dnskey.zoneKey {
             printError("[\(#fileID):\(#line)] Improper zone key usage")
-            throw DNSSECError.badSigningKey.error("Improper zone key usage")
+            throw DNSSECError.badSigningKey("Improper zone key usage")
         }
         if dnskey.revoked {
             printError("[\(#fileID):\(#line)] Key is revoked")
-            throw DNSSECError.badSigningKey.error("Key is revoked")
+            throw DNSSECError.badSigningKey("Key is revoked")
         }
         if answers[0].recordClass != signatureAnswer.recordClass {
             printError("[\(#fileID):\(#line)] Mismatched record class from signature")
-            throw DNSSECError.badSigningKey.error("Mismatched record class from signature")
+            throw DNSSECError.badSigningKey("Mismatched record class from signature")
         }
         if answers[0].recordType != rrsig.typeCovered {
             printError("[\(#fileID):\(#line)] Mismatched record type from signature")
-            throw DNSSECError.badSigningKey.error("Mismatched record type from signature")
+            throw DNSSECError.badSigningKey("Mismatched record type from signature")
         }
 
         guard var signedData: Data = try? Data(rrsig.signedData()) else {
             printError("[\(#fileID):\(#line)] Unable to determine signed data from signature")
-            throw DNSSECError.invalidResponse.error("Unable to determine signed data from signature")
+            throw DNSSECError.invalidResponse("Unable to determine signed data from signature")
         }
 
         for answer in answers.sorted() {
@@ -572,7 +592,7 @@ internal struct DNSSECClient {
                 signedData.append(rawSignatureData)
             } catch {
                 printError("[\(#fileID):\(#line)] Unable to determine signed data from signature")
-                throw DNSSECError.invalidResponse.error("Unable to determine signed data from signature")
+                throw DNSSECError.invalidResponse("Unable to determine signed data from signature")
             }
         }
 
@@ -581,14 +601,14 @@ internal struct DNSSECClient {
             publicKey = try dnskey.parsePublicKey()
         } catch {
             printError("[\(#fileID):\(#line)] Invalid public key: \(error.localizedDescription)")
-            throw DNSSECError.badSigningKey.error("Invalid public key: \(error.localizedDescription)")
+            throw DNSSECError.badSigningKey("Invalid public key: \(error.localizedDescription)")
         }
 
         let algorithm: SecKeyAlgorithm
         switch rrsig.algorithm {
         case .RSA_SHA1:
             printError("[\(#fileID):\(#line)] SHA-1 is unsupported")
-            throw DNSSECError.unsupportedAlgorithm.error("SHA-1 is unsupported")
+            throw DNSSECError.unsupportedAlgorithm("SHA-1 is unsupported")
         case .RSA_SHA256:
             algorithm = .rsaSignatureMessagePKCS1v15SHA256
         case .RSA_SHA512:
@@ -613,7 +633,7 @@ internal struct DNSSECClient {
                 printDebug("[\(#fileID):\(#line)] Signature: \(signature.hexEncodedString())")
             }
             printError("[\(#fileID):\(#line)] Signature validation failed with algorithm \(String(describing: algorithm))")
-            throw DNSSECError.signatureFailed.error("Signature validation failed")
+            throw DNSSECError.signatureFailed("Signature validation failed")
         }
     }
 }

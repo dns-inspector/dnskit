@@ -23,7 +23,7 @@ internal final class IPAddress {
     static func v4(_ data: Data) throws -> String {
         if data.count > 4 {
             printError("[\(#fileID):\(#line)] Invalid IPv4 address: expecting >= 4 bytes got \(data.count)")
-            throw Utils.MakeError("Invalid IPv4 address")
+            throw DNSKitError.invalidData("Invalid IPv4 address")
         }
 
         var buffer = ContiguousArray<Int8>(repeating: 0, count: Int(INET_ADDRSTRLEN))
@@ -41,7 +41,7 @@ internal final class IPAddress {
     static func v6(_ data: Data) throws -> String {
         if data.count > 16 {
             printError("[\(#fileID):\(#line)] Invalid IPv6 address: expecting >= 16 bytes got \(data.count)")
-            throw Utils.MakeError("Invalid IPv6 address")
+            throw DNSKitError.invalidData("Invalid IPv6 address")
         }
 
         var buffer = ContiguousArray<Int8>(repeating: 0, count: Int(INET6_ADDRSTRLEN))

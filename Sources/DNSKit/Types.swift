@@ -119,25 +119,3 @@ public enum DNSSECDigest: UInt8, Codable, Sendable {
         return String(describing: self)
     }
 }
-
-/// DNSSEC errors
-public enum DNSSECError: Int, Codable {
-    /// No signatures were found on the DNS message
-    case noSignatures = 1
-    /// The algorithm used is not supported by DNSKit
-    case unsupportedAlgorithm = 2
-    /// One or more domain did not produce signing keys
-    case missingKeys = 3
-    /// The key signing key for the root domain was not recognized and is untrusted
-    case untrustedRootSigningKey = 4
-    /// One or more signatures for resource records failed cryptographic validation
-    case signatureFailed = 5
-    /// One or more aspects of the response is invalid
-    case invalidResponse = 6
-    /// The signing key provided was invalid
-    case badSigningKey = 7
-
-    internal func error(_ description: String) -> Error {
-        return Utils.MakeError(description, code: self.rawValue)
-    }
-}

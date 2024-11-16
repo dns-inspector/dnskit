@@ -38,13 +38,13 @@ public struct TXTRecordData: RecordData {
                 break
             }
             if offset+Int(length) > recordData.count {
-                throw Utils.MakeError("Invalid length value in TXT RDATA")
+                throw DNSKitError.invalidData("Invalid length value in TXT RDATA")
             }
 
             offset += 1
             let data = recordData.subdata(in: offset..<offset+Int(length))
             guard let text = String(data: data, encoding: .utf8) else {
-                throw Utils.MakeError("Unable to decode TXT RDATA as UTF8 bytes")
+                throw DNSKitError.invalidData("Unable to decode TXT RDATA as UTF8 bytes")
             }
 
             recordText.append(text)

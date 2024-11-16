@@ -137,7 +137,7 @@ public struct Query: Sendable {
 
     /// Execute this DNS query
     /// - Parameter complete: A callback invoked with the response message or an error
-    public func execute(withCallback complete: @Sendable @escaping (Result<Message, Error>) -> Void) {
+    public func execute(withCallback complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
         self.dispatchQueue.async {
             self.client.send(message: self.message(), complete: complete)
         }

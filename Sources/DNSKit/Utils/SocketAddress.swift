@@ -50,14 +50,14 @@ internal final class SocketAddress: CustomStringConvertible, CustomDebugStringCo
             let portMatches = SocketAddress.portSuffixPattern.matches(in: addressString, range: NSRange(location: 0, length: addressString.count))
             if portMatches.count > 1 {
                 printError("[\(#fileID):\(#line)] Invalid IPv4 address: \(addressString)")
-                throw Utils.MakeError("Invalid IPv4 Address")
+                throw DNSKitError.invalidData("Invalid IPv4 address")
             } else if portMatches.count == 1 {
                 let portStr = String(addressString.suffix(portMatches[0].range.length-1))
                 ipAddress = String(addressString.prefix(portMatches[0].range.location))
 
                 guard let port = UInt16(portStr) else {
                     printError("[\(#fileID):\(#line)] Invalid port number from address: \(addressString)")
-                    throw Utils.MakeError("Invalid port number")
+                    throw DNSKitError.invalidData("Invalid port number")
                 }
 
                 self.port = port
@@ -69,7 +69,7 @@ internal final class SocketAddress: CustomStringConvertible, CustomDebugStringCo
             var sa: sockaddr_in = .init()
             if inet_pton(AF_INET, ipAddress, &sa.sin_addr) == 0 {
                 printError("[\(#fileID):\(#line)] Invalid IPv4 address: \(addressString)")
-                throw Utils.MakeError("Invalid IPv4 Address")
+                throw DNSKitError.invalidData("Invalid IPv4 address")
             }
 
             self.ipAddress = ipAddress
@@ -85,7 +85,7 @@ internal final class SocketAddress: CustomStringConvertible, CustomDebugStringCo
 
                 guard let port = UInt16(portStr) else {
                     printError("[\(#fileID):\(#line)] Invalid port number from address: \(addressString)")
-                    throw Utils.MakeError("Invalid port number")
+                    throw DNSKitError.invalidData("Invalid port number")
                 }
 
                 self.port = port
@@ -97,14 +97,14 @@ internal final class SocketAddress: CustomStringConvertible, CustomDebugStringCo
             var sa: sockaddr_in6 = .init()
             if inet_pton(AF_INET6, ipAddress, &sa.sin6_addr) == 0 {
                 printError("[\(#fileID):\(#line)] Invalid IPv6 address: \(addressString)")
-                throw Utils.MakeError("Invalid IPv6 Address")
+                throw DNSKitError.invalidData("Invalid IPv6 address")
             }
 
             self.ipAddress = ipAddress
             self.version = .v6
         } else {
             printError("[\(#fileID):\(#line)] Unrecognized IP address: \(addressString)")
-            throw Utils.MakeError("Unknown IP address format")
+            throw DNSKitError.invalidData("Invalid port number")
         }
     }
 

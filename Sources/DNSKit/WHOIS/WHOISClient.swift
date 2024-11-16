@@ -42,16 +42,16 @@ public struct WHOISClient: Sendable {
     ///   - complete: Callback called when the lookup has completed with a result or an error.
     ///
     /// > Tip: WHOIS data is always returned as an human-readable formatted string.
-    public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<[WHOISReply], Error>) -> Void) {
+    public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<[WHOISReply], WHOISError>) -> Void) {
         let (oServer, oBareDomain) = WHOISClient.getLookupHost(for: domain)
         guard let server = oServer else {
             printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
-            complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
+            complete(.failure(.whoisNotSupported))
             return
         }
         guard let bareDomain = oBareDomain else {
             printError("[\(#fileID):\(#line)] Unsuported TLD for WHOIS lookup: \(domain)")
-            complete(.failure(Utils.MakeError("TLD does not support WHOIS")))
+            complete(.failure(.whoisNotSupported))
             return
         }
 
@@ -73,16 +73,16 @@ public struct WHOISClient: Sendable {
             _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 5))
             didComplete.If(false) {
                 printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): timed out")
-                complete(.failure(Utils.MakeError("Timed out")))
+                complete(.failure(.timedOut))
                 return true
             }
         }
     }
 
-    internal static func lookup(_ domain: String, server: String, depth: Int, replies: AtomicArray<WHOISReply>, complete: @Sendable @escaping (Result<[WHOISReply], Error>) -> Void) {
+    internal static func lookup(_ domain: String, server: String, depth: Int, replies: AtomicArray<WHOISReply>, complete: @Sendable @escaping (Result<[WHOISReply], WHOISError>) -> Void) {
         if depth > 10 {
             printError("[\(#fileID):\(#line)] Aborting WHOIS request due to too many redirects")
-            complete(.failure(Utils.MakeError("Too many redirects")))
+            complete(.failure(.tooManyRedirects))
             return
         }
 
@@ -94,19 +94,19 @@ public struct WHOISClient: Sendable {
             switch state {
             case .failed(let error):
                 printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
-                complete(.failure(error))
+                complete(.failure(.connectionError(error)))
                 connection.cancel()
             case .ready:
                 connection.receive(minimumIncompleteLength: 2, maximumLength: 4096) { oContent, _, _, oError in
                     if let error = oError {
                         printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
-                        complete(.failure(error))
+                        complete(.failure(.connectionError(error)))
                         connection.cancel()
                         return
                     }
                     guard let data = oContent else {
-                        printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): No data")
-                        complete(.failure(Utils.MakeError("No data")))
+                        printWarning("[\(#fileID):\(#line)] WHOIS server provided no data")
+                        complete(.success(replies.Get()))
                         connection.cancel()
                         return
                     }
@@ -142,7 +142,7 @@ public struct WHOISClient: Sendable {
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
                         printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
-                        complete(.failure(error))
+                        complete(.failure(.connectionError(error)))
                         connection.cancel()
                         return
                     }

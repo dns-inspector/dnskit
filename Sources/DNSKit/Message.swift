@@ -58,7 +58,7 @@ public struct Message: Sendable {
     internal init(messageData: Data, elapsed: UInt64 = 0) throws {
         if messageData.count < 12 {
             printError("[\(#fileID):\(#line)] Invalid DNS message: too short \(messageData.count)B")
-            throw Utils.MakeError("Invalid DNS message: too short")
+            throw DNSKitError.invalidData("Invalid DNS message: too short")
         }
 
         // Read the header
@@ -69,19 +69,19 @@ public struct Message: Sendable {
         self.authoritativeAnswer = header.authoritativeAnswer
         guard let opCode = OperationCode(rawValue: Int(header.operationCode)) else {
             printError("[\(#fileID):\(#line)] Invalid DNS message: unknown operation code \(header.operationCode)")
-            throw Utils.MakeError("Invalid DNS message: unknown operation code")
+            throw DNSKitError.invalidData("Invalid DNS message: unknown operation code")
         }
         self.operationCode = opCode
         self.isResponse = header.isResponse
         guard let rCode = ResponseCode(rawValue: Int(header.responseCode)) else {
             printError("[\(#fileID):\(#line)] Invalid DNS message: unknown response code \(header.responseCode)")
-            throw Utils.MakeError("Invalid DNS message: unknown response code")
+            throw DNSKitError.invalidData("Invalid DNS message: unknown response code")
         }
         self.responseCode = rCode
 
         if header.questionCount == 0 {
             printError("[\(#fileID):\(#line)] Invalid DNS message: no questions")
-            throw Utils.MakeError("Invalid DNS message: no questions")
+            throw DNSKitError.invalidData("Invalid DNS message: no questions")
         }
 
         let (questions, answerStartOffset) = try Message.readQuestions(messageData: messageData, expectedQuestionCount: header.questionCount)
@@ -109,11 +109,11 @@ public struct Message: Sendable {
 
             guard let recordType = RecordType(rawValue: recordTypeRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record type in question at index \(questionsRead): \(recordTypeRaw)")
-                throw Utils.MakeError("Invalid DNS message: unknown record type")
+                throw DNSKitError.invalidData("Invalid DNS message: unknown record type")
             }
             guard let recordClass = RecordClass(rawValue: recordClassRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record class in question at index \(questionsRead): \(recordClassRaw)")
-                throw Utils.MakeError("Invalid DNS message: unknown record class")
+                throw DNSKitError.invalidData("Invalid DNS message: unknown record class")
             }
 
             questions.append(Question(name: name, recordType: recordType, recordClass: recordClass))
@@ -144,22 +144,22 @@ public struct Message: Sendable {
             }
             guard let recordType = RecordType(rawValue: recordTypeRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record type in answer at index \(answersRead): \(recordTypeRaw)")
-                throw Utils.MakeError("Invalid DNS message: unknown record type")
+                throw DNSKitError.invalidData("Invalid DNS message: unknown record type")
             }
             guard let recordClass = RecordClass(rawValue: recordClassRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record class in answer at index \(answersRead): \(recordClassRaw)")
-                throw Utils.MakeError("Invalid DNS message: unknown record class")
+                throw DNSKitError.invalidData("Invalid DNS message: unknown record class")
             }
             if dataLength > messageData.count {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: data length (\(dataLength)B) of answer at index \(answersRead) exceeds message size \(messageData.count)B")
-                throw Utils.MakeError("Invalid DNS message: data length exceeds actual size")
+                throw DNSKitError.invalidData("Invalid DNS message: data length exceeds actual size")
             }
 
             let valueStartOffset = dataOffset+10
             let value = messageData.subdata(in: valueStartOffset..<valueStartOffset+Int(dataLength))
             if value.count != dataLength {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: data length \(dataLength) must match record data size \(value.count)")
-                throw Utils.MakeError("Invalid DNS message: data length must match record data size")
+                throw DNSKitError.invalidData("Invalid DNS message: data length must match record data size")
             }
             answerStartOffset = valueStartOffset+Int(dataLength)
 
@@ -289,7 +289,7 @@ internal struct MessageHeader {
     init(messageData: Data) throws {
         if messageData.count < 12 {
             printError("[\(#fileID):\(#line)] Invalid DNS message: too short \(messageData.count)B")
-            throw Utils.MakeError("Invalid DNS message: too short")
+            throw DNSKitError.invalidData("Invalid DNS message: too short")
         }
 
         let (id, flags1, flags2, questionCount, answerCount, nameserverCount, additionalCount) = messageData.withUnsafeBytes {

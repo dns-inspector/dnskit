@@ -26,11 +26,11 @@ public struct DNSSECResult: Sendable {
     /// If signature data was validated against the keys provided
     public var signatureVerified: Bool = false
     /// If signature data was not verified, what error occured
-    public var signatureError: Error?
+    public var signatureError: DNSSECError?
     /// If the delegation chain from the root zone is trusted
     public var chainTrusted: Bool = false
     /// If the chain is not trusted, what error occured
-    public var chainError: Error?
+    public var chainError: DNSSECError?
     /// Zone delegation results
     public var zoneDelegation: [ZoneDelegation] = []
     /// DNSSEC resources for each zone

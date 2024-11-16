@@ -58,11 +58,11 @@ public struct RRSIGRecordData: RecordData {
         let signature = recordData.suffix(from: dataOffset)
 
         guard let typeCovered = RecordType(rawValue: typeCoveredRaw) else {
-            throw Utils.MakeError("Unknown record type")
+            throw DNSKitError.incorrectType("Unknown record type")
         }
 
         guard let algorithm = DNSSECAlgorithm(rawValue: algorithmRaw) else {
-            throw Utils.MakeError("Unknown or unsupport algorithm")
+            throw DNSKitError.unsupportedAlgorithm
         }
 
         self.typeCovered = typeCovered

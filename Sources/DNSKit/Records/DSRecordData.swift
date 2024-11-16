@@ -36,11 +36,11 @@ public struct DSRecordData: RecordData {
         }
 
         guard let algorithm = DNSSECAlgorithm(rawValue: algorithmRaw) else {
-            throw Utils.MakeError("Unknown or unsupported DNSSEC algorithm")
+            throw DNSKitError.unsupportedAlgorithm
         }
 
         guard let digestType = DNSSECDigest(rawValue: digestTypeRaw) else {
-            throw Utils.MakeError("Unknown or unsupported DNSSEC digest type")
+            throw DNSKitError.unsupportedAlgorithm
         }
 
         let digest = recordData.suffix(from: 4)

@@ -63,7 +63,7 @@ public struct DNSKEYRecordData: RecordData {
         }
 
         guard let algorithm = DNSSECAlgorithm(rawValue: rawAlgorithm) else {
-            throw Utils.MakeError("Unknown or unsupported DNSSEC algorithm")
+            throw DNSKitError.unsupportedAlgorithm
         }
 
         self.zoneKey = zoneKey
@@ -91,7 +91,8 @@ public struct DNSKEYRecordData: RecordData {
             ]
 
             if self.publicKey.count < 66 {
-                throw Utils.MakeError("Invalid size of RSA key")
+                printError("[\(#fileID):\(#line)] Invalid size of RSA key \(self.publicKey.count)")
+                throw DNSKitError.unsupportedAlgorithm
             }
 
             let keyBytes: [UInt8] = Array(self.publicKey)
@@ -110,7 +111,8 @@ public struct DNSKEYRecordData: RecordData {
             }
 
             if exponentLength > 4 || exponentLength == 0 {
-                throw Utils.MakeError("Invalid RSA key")
+                printError("[\(#fileID):\(#line)] Invalid exponent length \(exponentLength)")
+                throw DNSKitError.unsupportedAlgorithm
             }
 
             let modulusOffset = exponentOffset+Int(exponentLength)
@@ -142,12 +144,16 @@ public struct DNSKEYRecordData: RecordData {
 
             keyToParse = pkey
         default:
-            throw Utils.MakeError("Unsupported key algorithm")
+            throw DNSKitError.unsupportedAlgorithm
         }
 
         var keyError: Unmanaged<CFError>?
         guard let key = SecKeyCreateWithData(keyToParse as CFData, keyAttributes as CFDictionary, &keyError) else {
-            throw Utils.MakeError("Invalid public key")
+            if let keyError = keyError {
+                let error = keyError.takeUnretainedValue() as Error
+                throw DNSKitError.invalidData(error.localizedDescription)
+            }
+            throw DNSKitError.unsupportedAlgorithm
         }
 
         return key

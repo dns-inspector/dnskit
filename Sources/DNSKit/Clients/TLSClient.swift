@@ -28,14 +28,14 @@ internal final class TLSClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, any Error>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
         let timer = Timer.start()
 
         let messageData: Data
         do {
             messageData = try message.data(withLength: true)
         } catch {
-            complete(.failure(error))
+            complete(.failure(.invalidData(error.localizedDescription)))
             return
         }
 
@@ -92,7 +92,7 @@ internal final class TLSClient: IClient {
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
-            let completeRequest: @Sendable (Result<Message, any Error>) -> Void = { result in
+            let completeRequest: @Sendable (Result<Message, DNSKitError>) -> Void = { result in
                 didComplete.If(false) {
                     complete(result)
                     connection.cancel()
@@ -112,13 +112,13 @@ internal final class TLSClient: IClient {
                     printDebug("[\(#fileID):\(#line)] Read 2")
                     if let error = lengthError {
                         printError("[\(#fileID):\(#line)] Error recieving data: \(error)")
-                        completeRequest(.failure(error))
+                        completeRequest(.failure(.unexpectedResponse(error)))
                         return
                     }
 
                     guard let lengthContent = oLengthContent else {
                         printError("[\(#fileID):\(#line)] No data returned")
-                        completeRequest(.failure(Utils.MakeError("No content")))
+                        completeRequest(.failure(.emptyResponse))
                         return
                     }
 
@@ -127,7 +127,12 @@ internal final class TLSClient: IClient {
                     }
                     if length == 0 {
                         printError("[\(#fileID):\(#line)] Length of 0 returned, aborting")
-                        completeRequest(.failure(Utils.MakeError("No content")))
+                        completeRequest(.failure(.emptyResponse))
+                        return
+                    }
+                    if length > 4096 {
+                        printError("[\(#fileID):\(#line)] Excessive response size: \(length)")
+                        completeRequest(.failure(.unexpectedResponse(DNSKitError.excessiveResponseSize)))
                         return
                     }
 
@@ -137,19 +142,19 @@ internal final class TLSClient: IClient {
 
                         if let error = messageError {
                             printError("[\(#fileID):\(#line)] Error recieving data: \(error)")
-                            completeRequest(.failure(error))
+                            completeRequest(.failure(.unexpectedResponse(error)))
                             return
                         }
 
                         guard let messageContent = oMessageContent else {
                             printError("[\(#fileID):\(#line)] No data returned")
-                            completeRequest(.failure(Utils.MakeError("No content")))
+                            completeRequest(.failure(.emptyResponse))
                             return
                         }
 
                         if messageContent.count != length {
                             printError("[\(#fileID):\(#line)] Reported and actual length do not match. Reported: \(length), actual: \(messageContent.count)")
-                            completeRequest(.failure(Utils.MakeError("No content")))
+                            completeRequest(.failure(.emptyResponse))
                             return
                         }
 
@@ -158,7 +163,7 @@ internal final class TLSClient: IClient {
                             message = try Message(messageData: messageContent, elapsed: timer.stop())
                         } catch {
                             printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
-                            completeRequest(.failure(error))
+                            completeRequest(.failure(.invalidData(error.localizedDescription)))
                             return
                         }
 
@@ -172,13 +177,14 @@ internal final class TLSClient: IClient {
                 connection.send(content: messageData, completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     printDebug("[\(#fileID):\(#line)] Wrote \(messageData.count)")
                     if let error = oError {
-                        completeRequest(.failure(error))
+                        printError("[\(#fileID):\(#line)] Error writing question: \(error)")
+                        completeRequest(.failure(.connectionError(error)))
                         return
                     }
                 }))
             case .failed(let error):
                 printError("[\(#fileID):\(#line)] NWConnection failed with error: \(error)")
-                completeRequest(.failure(error))
+                completeRequest(.failure(.connectionError(error)))
             case .cancelled:
                 printInformation("[\(#fileID):\(#line)] NWConnection cancelled")
             default:
@@ -192,7 +198,7 @@ internal final class TLSClient: IClient {
         didComplete.If(false) {
             connection.cancel()
             printError("[\(#fileID):\(#line)] Connection timed out")
-            complete(.failure(Utils.MakeError("Connection timed out")))
+            complete(.failure(.timedOut))
             return true
         }
     }

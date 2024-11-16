@@ -29,32 +29,32 @@ internal final class HTTPClient: IClient {
         }
 
         guard let url = URL(string: urlString) else {
-            throw Utils.MakeError("Invalid URL")
+            throw DNSKitError.invalidUrl
         }
 
         if url.scheme != "https" {
-            throw Utils.MakeError("Invalid URL")
+            throw DNSKitError.invalidUrl
         }
 
         guard let host = url.host else {
-            throw Utils.MakeError("Invalid URL")
+            throw DNSKitError.invalidUrl
         }
         if host.count == 0 {
-            throw Utils.MakeError("Invalid URL")
+            throw DNSKitError.invalidUrl
         }
 
         self.url = url
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, Error>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
         let timer = Timer.start()
 
         let questionData: Data
         do {
             questionData = try message.data()
         } catch {
-            complete(.failure(error))
+            complete(.failure(.invalidData(error.localizedDescription)))
             return
         }
 
@@ -69,7 +69,7 @@ internal final class HTTPClient: IClient {
         urlString += "dns=\(questionData.base64UrlEncodedValue())"
 
         guard let url = URL(string: urlString) else {
-            complete(.failure(Utils.MakeError("Invalid URL")))
+            complete(.failure(.invalidUrl))
             return
         }
 
@@ -82,43 +82,43 @@ internal final class HTTPClient: IClient {
         session.dataTask(with: request) { oData, oResponse, oError in
             if let error = oError {
                 printError("[\(#fileID):\(#line)] Response error \(error)")
-                complete(.failure(error))
+                complete(.failure(.unexpectedResponse(error)))
                 return
             }
 
             guard let response = oResponse as? HTTPURLResponse else {
                 printError("[\(#fileID):\(#line)] Response error")
-                complete(.failure(Utils.MakeError("Bad response")))
+                complete(.failure(.emptyResponse))
                 return
             }
 
             if response.statusCode != 200 {
                 printError("[\(#fileID):\(#line)] HTTP \(response.statusCode)")
-                complete(.failure(Utils.MakeError("HTTP \(response.statusCode)")))
+                complete(.failure(.httpError(response.statusCode)))
                 return
             }
 
             guard let contentType = response.allHeaderFields["Content-Type"] as? String else {
                 printError("[\(#fileID):\(#line)] No content type header")
-                complete(.failure(Utils.MakeError("No content type")))
+                complete(.failure(.invalidContentType("")))
                 return
             }
 
             if contentType.lowercased() != "application/dns-message" {
                 printError("[\(#fileID):\(#line)] Unsupported content type \(contentType)")
-                complete(.failure(Utils.MakeError("Bad content type")))
+                complete(.failure(.invalidContentType(contentType)))
                 return
             }
 
             guard let data = oData else {
                 printError("[\(#fileID):\(#line)] No data")
-                complete(.failure(Utils.MakeError("Bad response")))
+                complete(.failure(.emptyResponse))
                 return
             }
 
             if data.count > 4096 {
                 printError("[\(#fileID):\(#line)] Excessive data size \(data.count)")
-                complete(.failure(Utils.MakeError("Excessive data size")))
+                complete(.failure(.unexpectedResponse(DNSKitError.excessiveResponseSize)))
                 return
             }
 
@@ -129,7 +129,7 @@ internal final class HTTPClient: IClient {
                 complete(.success(message))
             } catch {
                 printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
-                complete(.failure(error))
+                complete(.failure(.invalidData(error.localizedDescription)))
             }
         }.resume()
     }
