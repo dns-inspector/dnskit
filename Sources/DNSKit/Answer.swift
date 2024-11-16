@@ -71,7 +71,7 @@ public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertib
         let labels = Name.splitName(self.name)
 
         guard let rrsig = rrsigAnswer.data as? RRSIGRecordData else {
-            throw DNSKitError.incorrectType("RRSIG record did not contain correct data")
+            throw DNSKitError.invalidData("RRSIG record did not contain correct data")
         }
 
         // wildcards

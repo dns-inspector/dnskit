@@ -50,7 +50,7 @@ internal struct DNSSECClient {
             break
         default:
             printError("[\(#fileID):\(#line)] Unsupported or unknown algorithm")
-            throw DNSSECError.unsupportedAlgorithm("Unsupported or unknown algorithm")
+            throw DNSSECError.unsupportedAlgorithm
         }
 
         let resources: [DNSSECResource]
@@ -66,7 +66,7 @@ internal struct DNSSECClient {
                 result.signatureError = error
             } else {
                 printError("[\(#fileID):\(#line)] DNSSECClient.getKeyChain threw non DNSSECError type: \(error)")
-                result.signatureError = .internalError(nil)
+                result.signatureError = .internalError(error.localizedDescription)
             }
             complete(result)
             return
@@ -104,13 +104,13 @@ internal struct DNSSECClient {
                 printError("[\(#fileID):\(#line)] Untrusted root key signing key")
                 printDebug("[\(#fileID):\(#line)] Ksk from response: \(data.publicKey.hexEncodedString())")
                 printDebug("[\(#fileID):\(#line)] Trusted root ksk: \(DNSSECClient.trustedRootKsk().hexEncodedString())")
-                result.chainError = DNSSECError.untrustedRootSigningKey("Untrusted root key signing key")
+                result.chainError = DNSSECError.untrustedRootSigningKey
                 return result
             }
         }
         if !foundRootKsk {
             printError("[\(#fileID):\(#line)] Unable to locate root key signing key")
-            result.chainError = DNSSECError.untrustedRootSigningKey("Untrusted root key signing key")
+            result.chainError = DNSSECError.untrustedRootSigningKey
             return result
         }
 
@@ -172,7 +172,7 @@ internal struct DNSSECClient {
                     result.signatureError = error
                 } else {
                     printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
-                    result.signatureError = .internalError(nil)
+                    result.signatureError = .internalError(error.localizedDescription)
                 }
                 return result
             }
@@ -215,7 +215,7 @@ internal struct DNSSECClient {
                     result.signatureError = error
                 } else {
                     printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
-                    result.signatureError = .internalError(nil)
+                    result.signatureError = .internalError(error.localizedDescription)
                 }
                 return result
             }
@@ -306,7 +306,7 @@ internal struct DNSSECClient {
                     result.chainError = error
                 } else {
                     printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
-                    result.chainError = .internalError(nil)
+                    result.chainError = .internalError(error.localizedDescription)
                 }
                 return result
             }
@@ -608,7 +608,7 @@ internal struct DNSSECClient {
         switch rrsig.algorithm {
         case .RSA_SHA1:
             printError("[\(#fileID):\(#line)] SHA-1 is unsupported")
-            throw DNSSECError.unsupportedAlgorithm("SHA-1 is unsupported")
+            throw DNSSECError.unsupportedAlgorithm
         case .RSA_SHA256:
             algorithm = .rsaSignatureMessagePKCS1v15SHA256
         case .RSA_SHA512:
@@ -633,7 +633,7 @@ internal struct DNSSECClient {
                 printDebug("[\(#fileID):\(#line)] Signature: \(signature.hexEncodedString())")
             }
             printError("[\(#fileID):\(#line)] Signature validation failed with algorithm \(String(describing: algorithm))")
-            throw DNSSECError.signatureFailed("Signature validation failed")
+            throw DNSSECError.signatureFailed
         }
     }
 }

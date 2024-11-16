@@ -28,8 +28,6 @@ public enum DNSKitError: Error, Sendable {
     case emptyResponse
     /// An internal error occured while processing the data. More details are available.
     case invalidData(String)
-    /// The type of data we recieved was not the type we were expecting. More details are available.
-    case incorrectType(String)
     /// Data that was required to complete the operation was not present. More details are available.
     case missingData(String)
     /// The response from the server exceeded the maximum allowed response size
@@ -60,20 +58,20 @@ public enum WHOISError: Error, Sendable {
 
 /// All possible DNSSEC-related errors
 public enum DNSSECError: Error, Sendable {
-    /// No signatures were found on the DNS message
-    case noSignatures(String?)
-    /// The algorithm used is not supported by DNSKit
-    case unsupportedAlgorithm(String?)
-    /// One or more domain did not produce signing keys
-    case missingKeys(String?)
-    /// The key signing key for the root domain was not recognized and is untrusted
-    case untrustedRootSigningKey(String?)
-    /// One or more signatures for resource records failed cryptographic validation
-    case signatureFailed(String?)
-    /// One or more aspects of the response is invalid
-    case invalidResponse(String?)
-    /// The signing key provided was invalid
-    case badSigningKey(String?)
-    /// An internal processing error occured. This indicates a bug with DNSKit.
-    case internalError(String?)
+    /// No signatures were found on the DNS message. More details are available.
+    case noSignatures(String)
+    /// The algorithm used is not supported by DNSKit.
+    case unsupportedAlgorithm
+    /// One or more domain did not produce signing keys. More details are available.
+    case missingKeys(String)
+    /// The key signing key for the root domain was not recognized and is untrusted.
+    case untrustedRootSigningKey
+    /// One or more signatures for resource records failed cryptographic validation.
+    case signatureFailed
+    /// One or more aspects of the response is invalid. More details are available.
+    case invalidResponse(String)
+    /// The signing key provided was invalid. More details are available.
+    case badSigningKey(String)
+    /// An internal processing error occured. This indicates a bug with DNSKit. More details are available.
+    case internalError(String)
 }

@@ -104,7 +104,7 @@ public struct HTTPSRecordData: RecordData, CompressibleRecordData {
                 }
             case .IPv4Hint:
                 if valueLength % 4 != 0 {
-                    throw DNSKitError.incorrectType("Invalid length of IPv4 hint in SvcParam")
+                    throw DNSKitError.invalidData("Invalid length of IPv4 hint in SvcParam")
                 }
                 let bytes: [UInt8] = Array(value)
                 let numberOfAddresses = valueLength / 4
@@ -119,7 +119,7 @@ public struct HTTPSRecordData: RecordData, CompressibleRecordData {
                 ech = value
             case .IPv6Hint:
                 if valueLength % 16 != 0 {
-                    throw DNSKitError.incorrectType("Invalid length of IPv6 hint in SvcParam")
+                    throw DNSKitError.invalidData("Invalid length of IPv6 hint in SvcParam")
                 }
                 let bytes: [UInt8] = Array(value)
                 let numberOfAddresses = valueLength / 16
