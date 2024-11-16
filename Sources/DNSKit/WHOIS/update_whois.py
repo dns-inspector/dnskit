@@ -105,7 +105,7 @@ import Foundation
 //
 // Thank you to Marco d'Itri <md@linux.it> for maintaining this list!
 
-internal extension WHOIS {
+internal extension WHOISClient {
     static func getNewGtlds() -> [String] {
         return [
 """
