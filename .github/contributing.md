@@ -4,7 +4,7 @@ This document describes the guidelines for contributing to DNSKit. Items with th
 
 ## Development Strategy
 
-DNSKit follows a typical semantic version system of major, minor, and patch releases.
+DNSKit tries to follow, but does not guarantee, a typical semantic version system of major, minor, and patch releases.
 
 **Major** releases are reserved for when there are significant changes to the ABI or API that will result in breaking application that currently use DNSKit where updating existing apps may be complex.
 
@@ -18,7 +18,7 @@ Only project administrators can publish a new release of the package. Releases a
 
 The main branch of the package is the `main` branch.
 
-Minor and patch releases can be developed and cut directly from the `main` branch, however major releases must be developed in a dedicated branch to ensure that minor and patch releases can occur during development, if needed.
+Minor and patch releases can be developed and cut directly from the `main` branch, however major releases **MUST** be developed in a dedicated branch to ensure that minor and patch releases can occur during development, if needed.
 
 All new releases **MUST** have an associated git tag & GitHub release.
 
@@ -30,7 +30,7 @@ You should fully review and understand the requirements of these licenses before
 
 **When you contribute code to the project, you are required to transfer copyright ownership over to the project's head, Ian Spence.**
 
-All source code must have a copyright header at the top. The template for the header is located at `.github/license-header.txt`. The year in the header must match the year for when the file was last modified.
+All source code **MUST** have a copyright header at the top. The template for the header is located at `.github/license-header.txt`. The year in the header **MUST** match the year for when the file was last modified. If you modify an existing file, you may be required to update the copyright year of that file.
 
 ### Code Style
 
@@ -42,9 +42,12 @@ DNSKit uses strict code style rules enforced by automated tooling. This helps to
 
 > [!TIP]
 > Add these lines to `.git/hooks/pre-commit` to catch style errors before you commit your changes:
-> ```
+> ```bash
 > python3 .github/check-license.py
 > swiftlint lint --quiet --strict Sources
+>
+> # Optional, only if you plan to modify the test server
+> go vet Tests/DNSKitTests/TestServer/*.go
 > ```
 
 ### Testing
@@ -53,9 +56,10 @@ Unit and functional testing is a requirement in DNSKit as untested code poses si
 
 DNSKit includes a test server that can be used to attest functionality of the package against a simulated server.
 
-- Any changes or new functionality to DNSKit **MUST** be covered by an automated test
-- Any changes that require communicating with a running DNS server **SHOULD** use make test server as a first choice, however:
-- If a real DNS server must be used, tests **MUST** only use [CloudFlare's DNS service](https://1.1.1.1/dns).
+- Any changes or new functionality to DNSKit **MUST** be covered by an automated test.
+- Any changes that require communicating with a running DNS server **SHOULD** use make test server as a first choice. However, if a real DNS server must be used:
+    - Tests **MUST** only use [CloudFlare's DNS service](https://1.1.1.1/dns).
+    - Queries **MUST** only use appropriate & well-known domains, such as `example.com`.
 
 ### Privacy
 
@@ -64,6 +68,14 @@ Protecting the privacy of users who interact with DNSKit, either directly or thr
 - With the exception of the configured DNS server and WHOIS providers, DNSKit **MUST NOT** contact any third-party service.
 - User-provided data, such as but not limited to a DNS query, **MUST NOT** appear in any log files or data, **UNLESS** the user has explicitly **OPTED-IN** for more verbose logging.
 
+## AI Generated Content
+
+It is **expressly forbidden** to contribute to DNSKit any content that has been created with the assistance of natural language processing artificial intelligence tools, hereby referred to as NLP-AI.
+
+The code and documentation that makes up DNSKit **MUST** be written by people. We reserve the right to selectively approve, reject or remove contributions where NLP-AI tools have been, or are suspected to have been, used, at our discretion.
+
+DNSKit believes that NLP-AI tools produce subpar content, introduce security risks, and rob individuals of compensation or recognition for their labour.
+
 ## Conduct
 
-All contributors of the DNSKit project must follow our [Code of Conduct](https://github.com/dns-inspector/dnskit/blob/main/.github/code_of_conduct.md). These rules apply to **every member**, including project leaders.
+All contributors of the DNSKit project **MUST** follow our [Code of Conduct](https://github.com/dns-inspector/dnskit/blob/main/.github/code_of_conduct.md). These rules apply to **every member**, including project leaders.
