@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -84,7 +84,7 @@ internal struct DNSSECClient {
         var result = DNSSECResult()
         result.resources = resources
 
-        // Double check that the root KSK is what we expect
+        // Double check that the root KSK is one of our trusted KSKs
         guard let rootResource = resources.last else {
             printError("[\(#fileID):\(#line)] No signing keys found")
             throw DNSSECError.missingKeys("No signing keys found")
@@ -99,13 +99,9 @@ internal struct DNSSECClient {
                 continue
             }
 
-            foundRootKsk = true
-            if data.publicKey != DNSSECClient.trustedRootKsk() {
-                printError("[\(#fileID):\(#line)] Untrusted root key signing key")
-                printDebug("[\(#fileID):\(#line)] Ksk from response: \(data.publicKey.hexEncodedString())")
-                printDebug("[\(#fileID):\(#line)] Trusted root ksk: \(DNSSECClient.trustedRootKsk().hexEncodedString())")
-                result.chainError = DNSSECError.untrustedRootSigningKey
-                return result
+            for rootKsk in trustedRootKSKs where rootKsk.publicKey == data.publicKey {
+                foundRootKsk = true
+                break
             }
         }
         if !foundRootKsk {
