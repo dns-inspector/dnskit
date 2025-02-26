@@ -4,11 +4,10 @@
 
 An asynchronous DNS library for Swift.
 
-DNSKit provides a wire array of support acorss the DNS ecosystem, including:
+DNSKit provides a wide array of support acorss the DNS ecosystem, including:
 
 - Native support for most common DNS record types
-- Support for DNS over HTTPS and DNS over TLS
-- TCP and UDP support for traditional DNS servers
+- Support for DNS over HTTPS, DNS over TLS, DNS over TCP, and DNS over UDP
 - Full DNSSEC signature validation & chain trust establishment
 - WHOIS client for domain information
 
@@ -36,12 +35,19 @@ import DNSKit
 /// - Throws: On DNS or parsing error
 /// - Returns: An IPv4 address
 func getAddressOf(name: String) async throws -> String {
-    let reply = try await Query(transportType: .DNS, serverAddress: "1.1.1.1", recordType: .A, name: name).execute()
+    let reply = try await Query(
+        transportType: .DNS, // The type of transport to use for sending the request, in this case plain DNS
+        serverAddress: "1.1.1.1", // The address of the DNS server to query
+        recordType: .A, // The record type we're asking for
+        name: name // The name to look up
+    ).execute()
     if reply.responseCode != .NOERROR {
         // Bad response code (i.e. unknown domain)
+        fatalError()
     }
     if reply.answers[0].recordType != .A {
         // Unexpected record type
+        fatalError()
     }
     let data = reply.answers[0].data as! ARecordData
     return data.ipAddress
@@ -60,8 +66,17 @@ func checkDNSSEC() async throws {
     let reply = try await query.execute()
     let dnssecResult = try await query.authenticate(message: reply)
 
-    if !dnssecResult.chainTrusted || !dnssecResult.signatureVerified {
-        // DNSSEC validation failed
+    if !dnssecResult.chainTrusted {
+        // Unable to establish trust from the root zone down to the zone in the query
+        let details = dnssecResult.chainError
     }
+    if !dnssec.signatureVerified {
+        // Unable to verify the signature of the data from the original reply
+        let details = dnssecResult.signatureError
+    }
+
+    // DNSSEC validation passed!
 }
 ```
+
+[**View DNSKit's API Documentation Online >>**](https://swiftpackageindex.com/dns-inspector/dnskit/documentation/dnskit)
