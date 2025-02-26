@@ -32,7 +32,9 @@ def get_file_year(filepath):
     try:
         result = subprocess.run(["git", "--no-pager", "log", "-1", "--pretty=%ci", "--", filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         date = result.stdout.decode('utf-8')
-        year = date.split("-")[0]
+        file_year = date.split("-")[0]
+        if file_year != "":
+            year = file_year
     except Exception as e:
         pass
     return year
@@ -50,6 +52,7 @@ def check_file_header(filepath, offset, prefixes):
     header_lines = header.split('\n')
 
     if len(lines) + offset < len(header_lines):
+        print(str(filepath) + ": Missing license header")
         return False
 
     i = 0
@@ -60,6 +63,7 @@ def check_file_header(filepath, offset, prefixes):
                 any_match = True
                 break
         if not any_match:
+            print(str(filepath) + ":" + str(i) + ": Got '" + lines[i + offset] + "' Expected '" + prefix + header_lines[i] + "'")
             return False
         i = i + 1
 
