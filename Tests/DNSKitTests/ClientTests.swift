@@ -61,6 +61,7 @@ final class ClientTests {
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
+        XCTAssertTrue(result.signatureVerified, "Signature must be verified")
     }
 
     func testAuthenticateMessageSOA() async throws {

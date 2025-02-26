@@ -1,6 +1,6 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
-// 
+// Copyright (C) 2025 Ian Spence
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -24,12 +24,12 @@ public struct DNSSECResource: Sendable {
     public let dnsKeys: [Answer]
     /// Signatures for the DNSKEY response
     public let keySignature: Answer
-    /// DS answer for this zone
-    public let ds: Answer?
-    /// SIgnatures for the DS response
+    /// DS answers for this zone
+    public let ds: [Answer]
+    /// Signatures for the DS response
     public let dsSignature: Answer?
 
-    internal init(zone: String, dnsKeys: [Answer], keySignature: Answer, ds: Answer?, dsSignature: Answer?) {
+    internal init(zone: String, dnsKeys: [Answer], keySignature: Answer, ds: [Answer], dsSignature: Answer?) {
         self.zone = zone
         self.dnsKeys = dnsKeys
         self.keySignature = keySignature
@@ -64,29 +64,29 @@ public struct DNSSECResource: Sendable {
         self.keySignature = keySignature!
 
         if let message = dsMessage {
-            var ds: Answer?
+            var ds: [Answer] = []
             var dsSignature: Answer?
             for answer in message.answers {
                 switch answer.recordType {
                 case .RRSIG:
                     dsSignature = answer
                 case .DS:
-                    ds = answer
+                    ds.append(answer)
                 default:
                     fatalError("Unknown message type")
                 }
             }
 
-            if ds == nil {
+            if ds.isEmpty {
                 fatalError("no DS answer")
             }
             if dsSignature == nil {
                 fatalError("no DS RRSIG answer")
             }
-            self.ds = ds!
+            self.ds = ds
             self.dsSignature = dsSignature!
         } else {
-            self.ds = nil
+            self.ds = []
             self.dsSignature = nil
         }
     }

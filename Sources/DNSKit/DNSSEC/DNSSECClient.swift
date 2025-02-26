@@ -225,35 +225,33 @@ internal struct DNSSECClient {
 
         // Verify the DS record of each parent zone, until the root
         for i in 0...resources.count-2 { // -2 because the root doesn't have a DS
-            guard let dsAnswer = resources[i].ds else {
-                printError("[\(#fileID):\(#line)] Missing required DS record for zone \(resources[i].zone)")
-                result.chainError = DNSSECError.noSignatures("Missing required DS record")
-                return result
-            }
-            guard let ds = dsAnswer.data as? DSRecordData else {
-                printError("[\(#fileID):\(#line)] Missing required DS record \(resources[i].zone)")
-                result.chainError = DNSSECError.noSignatures("Missing required DS record")
-                return result
-            }
+            let rrset = resources[i].ds
 
             // Check the ds digest
             do {
-                var digestMatched = false
-                for answer in resources[i].dnsKeys {
-                    guard let dnskey = answer.data as? DNSKEYRecordData else {
-                        continue
+                var digestMatched = true
+                for dsAnswer in rrset {
+                    guard let ds = dsAnswer.data as? DSRecordData else {
+                        printError("[\(#fileID):\(#line)] Missing required DS record \(resources[i].zone)")
+                        result.chainError = DNSSECError.noSignatures("Missing required DS record")
+                        return result
                     }
-                    if ds.keyTag != dnskey.keyTag {
-                        continue
-                    }
+                    for dnskeyAnswer in resources[i].dnsKeys {
+                        guard let dnskey = dnskeyAnswer.data as? DNSKEYRecordData else {
+                            continue
+                        }
+                        if ds.keyTag != dnskey.keyTag {
+                            continue
+                        }
 
-                    guard let digest = try? dnskey.hashWithOwnerName(dsAnswer.name, digest: ds.digestType) else {
-                        continue
-                    }
+                        guard let digest = try? dnskey.hashWithOwnerName(dsAnswer.name, digest: ds.digestType) else {
+                            continue
+                        }
 
-                    if digest == ds.digest {
-                        digestMatched = true
-                        break
+                        if digest == ds.digest {
+                            digestMatched = true
+                            break
+                        }
                     }
                 }
 
@@ -278,32 +276,35 @@ internal struct DNSSECClient {
 
             // DS Records are signed by their parent zone's key
             var dnskeyAnswer: Answer?
+            var keyTag: UInt32?
             for answer in resources[i+1].dnsKeys {
                 guard let dnskey = answer.data as? DNSKEYRecordData else {
                     continue
                 }
                 if dnskey.keyTag == rrsig.keyTag {
                     dnskeyAnswer = answer
+                    keyTag = dnskey.keyTag
                     break
                 }
             }
-            if dnskeyAnswer == nil {
+            guard let dnskeyAnswer = dnskeyAnswer, let keyTag = keyTag else {
                 printError("[\(#fileID):\(#line)] No key with tag \(rrsig.keyTag) found on zone")
                 result.chainError = DNSSECError.missingKeys("Missing DNSKEY for RRSIG")
                 return result
             }
 
             do {
-                printDebug("[\(#fileID):\(#line)] Validating DS record for \(dsAnswer.name)")
-                try DNSSECClient.validateAnswers([dsAnswer], signatureAnswer: rrsigAnswer, dnskeyAnswer: dnskeyAnswer!)
+                printDebug("[\(#fileID):\(#line)] Validating DS record for \(rrset[0].name) against key \(keyTag)")
+                try DNSSECClient.validateAnswers(rrset, signatureAnswer: rrsigAnswer, dnskeyAnswer: dnskeyAnswer)
             } catch {
-                printError("[\(#fileID):\(#line)] RRSIG validation failure for DS record in \(dsAnswer.name)")
+                printError("[\(#fileID):\(#line)] RRSIG validation failure for DS record in \(rrset[0].name)")
                 if let error = error as? DNSSECError {
                     result.chainError = error
                 } else {
                     printError("[\(#fileID):\(#line)] DNSSECClient.validateAnswers threw non DNSSECError type: \(error)")
                     result.chainError = .internalError(error.localizedDescription)
                 }
+                result.chainTrusted = false
                 return result
             }
             result.chainTrusted = true
@@ -476,7 +477,7 @@ internal struct DNSSECClient {
                 throw DNSSECError.missingKeys("Missing RRSIG for DNSKEY \(name)")
             }
 
-            var ds: Answer?
+            var ds: [Answer] = []
             var dsSig: Answer?
             if name.count > 1 {
                 guard let answers = dsAnswers.Get(i) else {
@@ -485,7 +486,7 @@ internal struct DNSSECClient {
                 }
                 for answer in answers {
                     if answer.recordType == .DS {
-                        ds = answer
+                        ds.append(answer)
                     } else if answer.recordType == .RRSIG {
                         dsSig = answer
                     }
