@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -97,7 +97,7 @@ public struct WHOISClient: Sendable {
                 complete(.failure(.connectionError(error)))
                 connection.cancel()
             case .ready:
-                connection.receive(minimumIncompleteLength: 2, maximumLength: 4096) { oContent, _, _, oError in
+                connection.receive(minimumIncompleteLength: 2, maximumLength: 8192) { oContent, _, _, oError in
                     if let error = oError {
                         printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
                         complete(.failure(.connectionError(error)))
@@ -124,20 +124,26 @@ public struct WHOISClient: Sendable {
                     // Check if there is a server we should follow to
                     let nextServer = WHOISClient.findRedirectInResponse(response)
 
-                    guard let followServer = nextServer else {
+                    guard let nextServer = nextServer else {
                         complete(.success(replies.Get()))
                         connection.cancel()
                         return
                     }
 
-                    if followServer.lowercased() == server.lowercased() {
+                    if nextServer == "" {
+                        complete(.success(replies.Get()))
+                        connection.cancel()
+                        return
+                    }
+
+                    if nextServer.lowercased() == server.lowercased() {
                         complete(.success(replies.Get()))
                         connection.cancel()
                         return
                     }
 
                     connection.cancel()
-                    WHOISClient.lookup(domain, server: followServer, depth: depth+1, replies: replies, complete: complete)
+                    WHOISClient.lookup(domain, server: nextServer, depth: depth+1, replies: replies, complete: complete)
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
                     if let error = oError {
@@ -225,6 +231,10 @@ public struct WHOISClient: Sendable {
             followServer = followServer.replacingOccurrences(of: "https://", with: "")
         } else if followServer.hasPrefix("http://") {
             followServer = followServer.replacingOccurrences(of: "http://", with: "")
+        }
+
+        if followServer == "" {
+            return nil
         }
 
         printDebug("[\(#fileID):\(#line)] Following redirect to \(followServer)")

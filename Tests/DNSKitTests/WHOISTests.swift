@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -53,5 +53,9 @@ final class WHOISTests: XCTestCase {
         let replyLF: NSString = "Domain Name: foo.bar\nRegistrar WHOIS Server: whois.example.com\nRegistrar URL: http://www.example.com\n"
         let redirectLF = WHOISClient.findRedirectInResponse(replyLF)
         XCTAssertEqual(redirectLF, "whois.example.com")
+
+        let replyMissing: NSString = "Domain Name: foo.bar\nRegistrar WHOIS Server:\nRegistrar URL:\n"
+        let redirectMissing = WHOISClient.findRedirectInResponse(replyMissing)
+        XCTAssertNil(redirectMissing)
     }
 }
