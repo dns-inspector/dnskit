@@ -78,6 +78,14 @@ final class ClientTests {
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
+    func testAuthenticateCNAME() async throws {
+        let query = Query(client: client, recordType: .A, name: "example.dns-inspector.com", queryOptions: QueryOptions(dnssecRequested: true))
+        let reply = try await query.execute()
+        let result = try await query.authenticate(message: reply)
+        XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
+        XCTAssertTrue(result.signatureVerified, "Signature must be verified")
+    }
+
     func testLocalControl() async throws {
         let query = Query(client: client, recordType: .A, name: "control.example.com")
         let reply = try await query.execute()

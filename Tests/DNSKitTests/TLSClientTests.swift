@@ -38,6 +38,10 @@ final class TLSClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .TLS, serverAddress: "1.1.1.1:853").testAuthenticateRoot()
     }
 
+    func testAuthenticateCNAME() async throws {
+        try await ClientTests(transportType: .TLS, serverAddress: "1.1.1.1:853").testAuthenticateCNAME()
+    }
+
     func testLocalControl() async throws {
         try await ClientTests(transportType: .TLS, serverAddress: "127.0.0.1:8403").testLocalControl()
     }
