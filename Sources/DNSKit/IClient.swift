@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -37,5 +37,5 @@ internal protocol IClient: Sendable {
     /// - Throws: Will throw on any fatal error while collecting required information.
     /// This method will perform multiple queries in relation to the number of zones within the name.
     /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
-    func authenticate(message: Message, complete: @Sendable @escaping (DNSSECResult) -> Void) throws
+    func authenticate(message: Message, complete: @escaping @Sendable (Result<DNSSECResult, Error>) -> Void)
 }

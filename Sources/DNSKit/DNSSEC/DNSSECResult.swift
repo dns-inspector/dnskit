@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -31,16 +31,6 @@ public struct DNSSECResult: Sendable {
     public var chainTrusted: Bool = false
     /// If the chain is not trusted, what error occured
     public var chainError: DNSSECError?
-    /// Zone delegation results
-    public var zoneDelegation: [ZoneDelegation] = []
     /// DNSSEC resources for each zone
     public var resources: [DNSSECResource] = []
-}
-
-/// Describes a zone delegation
-public struct ZoneDelegation: Sendable {
-    /// The parent zone that delegated to this zone
-    public var delegatedFrom: String
-    /// If the delegation was verified
-    public var verified: Bool
 }

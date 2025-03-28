@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -159,5 +159,13 @@ final class NameTests: XCTestCase {
         parts = Name.splitName(".")
 
         XCTAssertEqual(parts.count, 0)
+    }
+
+    func testParentNames() throws {
+        let parents = Name.parentNames(from: "foo.example.com.")
+        XCTAssertEqual(parents.count, 3)
+        XCTAssertEqual(parents[0], "example.com.")
+        XCTAssertEqual(parents[1], "com.")
+        XCTAssertEqual(parents[2], ".")
     }
 }

@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -134,7 +134,14 @@ internal final class HTTPClient: IClient {
         }.resume()
     }
 
-    func authenticate(message: Message, complete: @Sendable @escaping (DNSSECResult) -> Void) throws {
-        try DNSSECClient.authenticateMessage(message, client: self, complete: complete)
+    func authenticate(message: Message, complete: @escaping @Sendable (Result<DNSSECResult, Error>) -> Void) {
+        DispatchQueue(label: "io.ecn.dnskit.httpsclient.dnssec").async {
+            do {
+                let result = try DNSSECClient.authenticateMessage(message, client: self)
+                complete(.success(result))
+            } catch {
+                complete(.failure(error))
+            }
+        }
     }
 }

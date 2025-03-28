@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -161,8 +161,10 @@ public struct DNSKEYRecordData: RecordData {
 
     internal func hashWithOwnerName(_ ownerName: String, digest: DNSSECDigest) throws -> Data {
         var hashedData = Data()
-        try hashedData.append(Name.stringToName(ownerName))
+        let nameData = try Name.stringToName(ownerName)
+        hashedData.append(nameData)
         hashedData.append(self.recordData)
+        printDebug("[\(#fileID):\(#line)] Name data \(nameData.hexEncodedString()) record data \(self.recordData.hexEncodedString())")
 
         let digestLength: Int
         let digestFunc: (_ data: UnsafeRawPointer?, _ len: CC_LONG, _ md: UnsafeMutablePointer<UInt8>?) -> UnsafeMutablePointer<UInt8>?

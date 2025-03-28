@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -40,7 +40,7 @@ internal final class DNSClient: IClient, Sendable {
 
         printDebug("[\(#fileID):\(#line)] Question: \(messageData.hexEncodedString())")
 
-        let queue = DispatchQueue(label: "io.ecn.dnskit.tlsclient")
+        let queue = DispatchQueue(label: "io.ecn.dnskit.dnsclient")
         let semaphore = DispatchSemaphore(value: 0)
         let didComplete = AtomicBool(initialValue: false)
 
@@ -179,7 +179,14 @@ internal final class DNSClient: IClient, Sendable {
         }
     }
 
-    func authenticate(message: Message, complete: @escaping (DNSSECResult) -> Void) throws {
-        try DNSSECClient.authenticateMessage(message, client: self, complete: complete)
+    func authenticate(message: Message, complete: @escaping @Sendable (Result<DNSSECResult, Error>) -> Void) {
+        DispatchQueue(label: "io.ecn.dnskit.dnsclient.dnssec").async {
+            do {
+                let result = try DNSSECClient.authenticateMessage(message, client: self)
+                complete(.success(result))
+            } catch {
+                complete(.failure(error))
+            }
+        }
     }
 }

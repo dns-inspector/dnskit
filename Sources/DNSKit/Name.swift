@@ -1,5 +1,5 @@
 // DNSKit
-// Copyright (C) 2024 Ian Spence
+// Copyright (C) 2025 Ian Spence
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
@@ -157,5 +157,21 @@ public class Name {
         }
 
         return n.components(separatedBy: ".")
+    }
+
+    /// Return all of the qualified parent names from the given name.
+    /// For example, given 'foo.example.com', returns ['example.com.', 'com.', '.']
+    /// - Parameter name: The DNS name.
+    /// - Returns: An array of labels
+    public static func parentNames(from name: String) -> [String] {
+        var parts = splitName(name)
+        var names: [String] = []
+
+        while parts.count > 0 {
+            parts = Array(parts.dropFirst())
+            names.append(parts.joined(separator: ".") + ".")
+        }
+
+        return names
     }
 }

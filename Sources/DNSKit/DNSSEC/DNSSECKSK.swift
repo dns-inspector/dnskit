@@ -81,3 +81,8 @@ internal let trustedRootKSKs: [DNSSECRootKSK] = [
         0x2e, 0xf7, 0x3d, 0x87
     ]))
 ]
+
+#if DEBUG
+/// For test use only - additional KSKs to consider trustworthy
+nonisolated(unsafe) internal var debugTrustedRootKSKs: [DNSSECRootKSK] = []
+#endif
