@@ -28,7 +28,15 @@ internal struct DNSSECClient {
         let zonesToFetch = DNSSECResourceCollector.getAllZonesInMessage(message)
         printDebug("[\(#fileID):\(#line)] Getting resources for zones: \(zonesToFetch)")
         var resources = try DNSSECResourceCollector.getAllDNSSECResources(zones: zonesToFetch, client: client)
-
+        return try authenticateMessage(message, withResources: &resources)
+    }
+    /// Authenticate the given message by verifying its signatures and establishing a chain-of-trust for all
+    /// zones and parent zones in the message.
+    /// - Parameters:
+    ///   - message: The message to authenticate
+    ///   - resources: DNSSEC validation resources.
+    /// - Returns: A DNSSEC result
+    internal static func authenticateMessage(_ message: Message, withResources resources: inout [String: (Message, Message?)]) throws -> DNSSECResult {
         var result = DNSSECResult()
 
         // Ensure the KSK of the root zone matches one of the expected keys
