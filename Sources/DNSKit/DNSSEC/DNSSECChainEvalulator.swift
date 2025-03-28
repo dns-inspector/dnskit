@@ -39,14 +39,17 @@ internal struct DNSSECChainEvalulator {
                     throw DNSSECError.missingKeys("No DNSKEY record found to sign \(zone)'s DS record")
                 }
 
+                var hasValidDs = false
                 for dsAnswer in dsMessage.answers where dsAnswer.recordType == .DS {
                     guard let ds = dsAnswer.data as? DSRecordData else {
                         printError("[\(#fileID):\(#line)] Missing required DS record \(zone)")
                         throw DNSSECError.noSignatures("Missing required DS record")
                     }
                     guard let dnskey = keyMap[UInt32(ds.keyTag)]?.data as? DNSKEYRecordData else {
-                        printError("[\(#fileID):\(#line)] No DNSKEY record found to sign \(zone)'s DS record")
-                        throw DNSSECError.missingKeys("No DNSKEY record found to sign \(zone)'s DS record")
+                        // Some zones include multiple DS records, which may point to a DNSKEY that doesn't exist
+                        // By itself this doesn't mean the delegation is invalid, so long as there is at least one valid DS record for the zone
+                        printWarning("[\(#fileID):\(#line)] \(zone)'s DS record references non-existant DNSKEY")
+                        continue
                     }
 
                     // Double check the zone signed the DS record as expected
@@ -78,6 +81,10 @@ internal struct DNSSECChainEvalulator {
                         printError("[\(#fileID):\(#line)] No matching DNSKEY found from DS digest")
                         throw DNSSECError.missingKeys("Unknown DNSKEY referenced in DS record")
                     }
+                    hasValidDs = true
+                }
+                if !hasValidDs {
+                    throw DNSSECError.missingKeys("No DNSKEY record found to sign \(zone)'s DS record")
                 }
             }
         }
