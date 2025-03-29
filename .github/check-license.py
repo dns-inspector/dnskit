@@ -1,6 +1,6 @@
 """
 DNSKit
-Copyright (C) 2025 Ian Spence
+Copyright (C) Ian Spence and other DNSKit Contributors
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -20,24 +20,21 @@ from datetime import datetime
 import subprocess
 import sys
 
-license_header_template = ""
-with open(".github/license-header.txt", "r") as file:
-    license_header_template = file.read().rstrip()
+license_header_template = """DNSKit
+Copyright (C) Ian Spence and other DNSKit Contributors
 
-def get_license_header(year):
-    return license_header_template.replace("##YEAR##", year)
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-def get_file_year(filepath):
-    year = datetime.now().strftime("%Y")
-    try:
-        result = subprocess.run(["git", "--no-pager", "log", "-1", "--pretty=%ci", "--", filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        date = result.stdout.decode('utf-8')
-        file_year = date.split("-")[0]
-        if file_year != "":
-            year = file_year
-    except Exception as e:
-        pass
-    return year
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>."""
 
 def check_file_header(filepath, offset, prefixes):
     contents = ""
@@ -46,9 +43,7 @@ def check_file_header(filepath, offset, prefixes):
 
     lines = contents.split("\n")
 
-    year = get_file_year(filepath)
-
-    header = get_license_header(year)
+    header = license_header_template
     header_lines = header.split('\n')
 
     if len(lines) + offset < len(header_lines):
