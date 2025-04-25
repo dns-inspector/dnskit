@@ -33,6 +33,12 @@ final class WHOISTests: XCTestCase {
         getLookupHostForDomain("example.cn.com", expectedServer: "whois.centralnic.net", expectedBare: "example.cn.com")
         getLookupHostForDomain("example.app", expectedServer: "whois.nic.app", expectedBare: "example.app")
         getLookupHostForDomain("example.example.example.app", expectedServer: "whois.nic.app", expectedBare: "example.app")
+        getLookupHostForDomain("example.africa", expectedServer: "whois.nic.africa", expectedBare: "example.africa")
+        getLookupHostForDomain("africa", expectedServer: "whois.nic.africa", expectedBare: "africa")
+
+        let (comServer, comBare) = WHOISClient.getLookupHost(for: "com")
+        XCTAssertNil(comServer)
+        XCTAssertNil(comBare)
 
         // lmao please im begging you somebody register acab as a gtld
         let (server, bare) = WHOISClient.getLookupHost(for: "blm.acab")

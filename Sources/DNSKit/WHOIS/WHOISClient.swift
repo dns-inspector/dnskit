@@ -186,7 +186,7 @@ public struct WHOISClient: Sendable {
                 continue
             }
 
-            let bareDomain = "\(parts[parts.count-2]).\(tld)"
+            let bareDomain = parts.count >= 2 ? "\(parts[parts.count-2]).\(tld)" : String(parts[0])
             return ("whois.nic.\(tld)", bareDomain)
         }
 
