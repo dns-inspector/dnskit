@@ -108,6 +108,17 @@ final class NameTests: XCTestCase {
         }
     }
 
+    func testCatchPointerToZeroLength() throws {
+        do {
+            let nameLiteral: [UInt8] = [ 0xc0, 0x02, 0x00, 0x00, 0x00 ]
+            let data = Data(bytes: nameLiteral, count: nameLiteral.count)
+            _ = try Name.readName(data, startOffset: 0)
+            XCTFail("No exception thrown when one expected")
+        } catch {
+            //
+        }
+    }
+
     func testCatchInvalidPointerDestinationOffset() throws {
         do {
             let nameLiteral: [UInt8] = [ 0xc0, 0x16, 0xc0, 0x00 ]

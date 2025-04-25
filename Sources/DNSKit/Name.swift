@@ -114,6 +114,10 @@ public class Name {
                 }
 
                 let length = buffer[offset...offset].load(as: UInt8.self)
+                if length == 0 {
+                    throw DNSKitError.invalidData("Length is zero")
+                }
+
                 offset += 1
 
                 if offset+Int(length) > data.count-1 {
