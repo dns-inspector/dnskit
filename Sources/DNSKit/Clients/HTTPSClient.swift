@@ -77,6 +77,8 @@ internal final class HTTPClient: IClient {
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         sessionConfig.timeoutIntervalForResource = TimeInterval(self.transportOptions.timeout)
+        sessionConfig.httpCookieStorage = nil
+        sessionConfig.httpShouldSetCookies = false
         let session = URLSession(configuration: sessionConfig)
         printDebug("[\(#fileID):\(#line)] HTTP GET \(url)")
         session.dataTask(with: request) { oData, oResponse, oError in

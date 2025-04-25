@@ -19,27 +19,27 @@ import XCTest
 
 final class HTTPSClientTests: XCTestCase, IClientTests {
     func testQuery() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testQuery()
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testQuery()
     }
 
     func testQueryNXDOMAIN() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testQueryNXDOMAIN()
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testQueryNXDOMAIN()
     }
 
     func testAuthenticateMessageA() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateMessageA()
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateMessageA()
     }
 
     func testAuthenticateMessageSOA() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateMessageSOA()
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateMessageSOA()
     }
 
     func testAuthenticateRoot() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateRoot()
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateRoot()
     }
 
     func testAuthenticateCNAME() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query").testAuthenticateCNAME()
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateCNAME()
     }
 
     func testLocalControl() async throws {
