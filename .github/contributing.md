@@ -72,7 +72,7 @@ Protecting the privacy of users who interact with DNSKit, either directly or thr
 
 It is **expressly forbidden** to contribute to DNSKit any content that has been created with the assistance of natural language processing artificial intelligence tools, hereby referred to as NLP-AI.
 
-The code and documentation that makes up DNSKit **MUST** be written by people. We reserve the right to selectively approve, reject or remove contributions where NLP-AI tools have been, or are suspected to have been, used, at our discretion.
+The code and documentation that makes up DNSKit **MUST** be written by people. We reserve the right to selectively approve, reject or remove contributions where NLP-AI tools have been, or are suspected to have been, used, at our discretion. This policy includes user-submitted content such as but not limited to GitHub issues, pull requests, or security reports.
 
 DNSKit believes that NLP-AI tools produce subpar content, introduce security risks, and rob individuals of compensation or recognition for their labour.
 
