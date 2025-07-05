@@ -4,7 +4,7 @@
 
 An asynchronous DNS library for Swift.
 
-DNSKit provides a wide array of support acorss the DNS ecosystem, including:
+DNSKit provides a wide array of support across the DNS ecosystem, including:
 
 - Native support for most common DNS record types
 - Support for DNS over HTTPS, DNS over TLS, DNS over TCP, and DNS over UDP
@@ -13,7 +13,7 @@ DNSKit provides a wide array of support acorss the DNS ecosystem, including:
 
 ### License
 
-DNSKit is licnesed under the GNU Lesser General Public License 3.0 (LGPL3), an extension of the GNU General Public License 3.0 (GPL).
+DNSKit is licensed under the GNU Lesser General Public License 3.0 (LGPL3), an extension of the GNU General Public License 3.0 (GPL).
 
 > [!WARNING]  
 > It's important that you understand the requirements of these licenses before using DNSKit in your project!
@@ -23,7 +23,7 @@ DNSKit is licnesed under the GNU Lesser General Public License 3.0 (LGPL3), an e
 DNSKit provides a modern swift-focused API for interacting with DNS queries and responses.
 
 > [!WARNING]  
-> DNSKit does not offer API stability between releases. Always be sure to review the release notes carefully to understand what changes you will need to make.
+> DNSKit does not provide guaranteed API stability between releases. Always be sure to review the release notes carefully to understand what changes you will need to make.
 
 ### Get an IPv4 address of a host
 

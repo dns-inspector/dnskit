@@ -33,7 +33,7 @@ internal final class SocketAddress: CustomStringConvertible, CustomDebugStringCo
     /// Create a new SocketAddress instance from the given socket address string
     /// - Parameter addressString: The address string
     ///
-    /// Acceppted IP address formats:
+    /// Accepted IP address formats:
     ///
     /// **IPv4:**
     /// - `n.n.n.n`

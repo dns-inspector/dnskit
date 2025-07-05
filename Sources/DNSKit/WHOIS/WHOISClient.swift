@@ -26,7 +26,7 @@ public struct WHOISClient: Sendable {
     /// - Returns: Returns the WHOIS response data
     /// - Throws: Will throw if unable to perform the lookup
     ///
-    /// > Tip: WHOIS data is always returned as an human-readable formatted string.
+    /// > Tip: WHOIS data is always returned as a human-readable formatted string.
     @available(iOS 13.0, macOS 10.15, *)
     public static func lookup(_ domain: String) async throws -> [WHOISReply] {
         return try await withCheckedThrowingContinuation { continuation in
@@ -41,7 +41,7 @@ public struct WHOISClient: Sendable {
     ///   - domain: The domain name to query
     ///   - complete: Callback called when the lookup has completed with a result or an error.
     ///
-    /// > Tip: WHOIS data is always returned as an human-readable formatted string.
+    /// > Tip: WHOIS data is always returned as a human-readable formatted string.
     public static func lookup(_ domain: String, complete: @Sendable @escaping (Result<[WHOISReply], WHOISError>) -> Void) {
         let (oServer, oBareDomain) = WHOISClient.getLookupHost(for: domain)
         guard let server = oServer else {

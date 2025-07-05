@@ -34,10 +34,10 @@ internal struct ASN1 {
     /// DNSSEC returns RSA keys as 1 or 3 bytes for the length of the exponent, then the remainder of the bytes for the
     /// modulus. Apple expects RSA keys to be a ASN.1 sequence of the modulus then the exponent.
     ///
-    /// For the exponent length, if the first byte is 0 then the next two bytes are the length of the exponnet. Howevever,
+    /// For the exponent length, if the first byte is 0 then the next two bytes are the length of the exponent. However,
     /// DNSKit does not support exponents greater than 4 bytes - which will always fit within 1 byte for length.
     internal static func pkcs1RSAPubkey(exponent: UInt32, exponentLength: UInt16, modulus: Data) -> Data {
-        // If the first bit of the modulous is 1, its a negative number. ASN.1 pads negative numbers with an extra 0 byte
+        // If the first bit of the modulous is 1, it's a negative number. ASN.1 pads negative numbers with an extra 0 byte
         let firstByte = modulus.withUnsafeBytes { mod in
             return mod[0...0].loadUnaligned(as: UInt8.self)
         }
@@ -80,7 +80,7 @@ internal struct ASN1 {
             // No transformation needed
             return signature
         case .ECDSAP256_SHA256, .ECDSAP384_SHA384:
-            // DNSSEC returns the bare R and S coords concationated together
+            // DNSSEC returns the bare R and S coords concatenated together
             // but Apple expects it to be in a ASN.1 sequence.
             let rData = signature.prefix(signature.count/2)
             let sData = signature.suffix(signature.count/2)

@@ -16,7 +16,7 @@
 
 import Foundation
 
-/// Describes the record data for a SOA record
+/// Describes the record data for an SOA record
 public struct SOARecordData: RecordData, CompressibleRecordData {
     /// Primary nameserver
     public let mname: String

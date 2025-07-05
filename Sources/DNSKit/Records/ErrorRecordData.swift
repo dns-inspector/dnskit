@@ -16,9 +16,9 @@
 
 import Foundation
 
-/// Describes a placeholder record data type for when DNSKit could not deserlize the data
+/// Describes a placeholder record data type for when DNSKit could not deserialize the data
 public struct ErrorRecordData: RecordData {
-    /// The error that occured while deserlizing the record data
+    /// The error that occurred while deserializing the record data
     public let error: Error
 
     internal init(error: Error) {

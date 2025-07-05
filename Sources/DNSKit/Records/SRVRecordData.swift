@@ -16,7 +16,7 @@
 
 import Foundation
 
-/// Describes the record data for a SRV record
+/// Describes the record data for an SRV record
 public struct SRVRecordData: RecordData, CompressibleRecordData {
     /// The record priority
     public let priority: UInt16

@@ -20,8 +20,9 @@ import Foundation
 public struct TransportOptions: Sendable {
     /// If the transport type is DNS, should TCP connections be used instead of UDP.
     ///
-    /// TCP is preferred over UDP by this package because modern networks are more than good enough that any performance difference between TCP
-    /// and UDP is barely notable by the user, and that TCP has fewer limits on data size than UDP does.
+    /// TCP is preferred over UDP by this package. Modern networks are more than good enough that any performance 
+    /// difference between TCP and UDP is barely notable by the user, and that TCP has fewer limits on data size than
+    /// UDP does.
     public var dnsPrefersTcp = true
 
     /// The maximum number of seconds to wait before failing a query if the server has not responded.
@@ -82,7 +83,7 @@ public struct Query: Sendable {
     ///
     ///   If ``TransportType/DNS`` or ``TransportType/TLS`` is used, then an IP address and optional port _should_ be used. If an IPv6 address is being used with a port, the address must be wrapped in square brackets.
     ///
-    ///   If ``TransportType/HTTPS`` is used, then a valid HTTPS url must be provided. If no protocol is defined, HTTPS is automatically added. Other protocols, such as HTTP, are not supported and will throw an error.
+    ///   If ``TransportType/HTTPS`` is used, then a valid HTTPS URL must be provided. If no protocol is defined, HTTPS is automatically added. Other protocols, such as HTTP, are not supported and will throw an error.
     /// - Throws: Will throw if an invalid server address is provided. Use ``validateConfiguration(transportType:serverAddress:)`` to test server configuration.
     public init(transportType: TransportType, transportOptions: TransportOptions = TransportOptions(), serverAddress: String, recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) throws {
         self.transportType = transportType

@@ -58,7 +58,7 @@ DNSKit includes a test server that can be used to attest functionality of the pa
 
 - Any changes or new functionality to DNSKit **MUST** be covered by an automated test.
 - Any changes that require communicating with a running DNS server **SHOULD** use make test server as a first choice. However, if a real DNS server must be used:
-    - Tests **MUST** only use [CloudFlare's DNS service](https://1.1.1.1/dns).
+    - Tests **MUST** only use [CloudFlare's DNS service](https://1.1.1.1/dns) or [DNS Inspector's DNS resolver](https://dns-inspector.com/dns.html).
     - Queries **MUST** only use appropriate & well-known domains, such as `example.com`.
 
 ### Privacy

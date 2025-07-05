@@ -16,5 +16,5 @@
 
 import Foundation
 
-/// Describes the record data for a NS record
+/// Describes the record data for an NS record
 public typealias NSRecordData = BasicNameRecordData

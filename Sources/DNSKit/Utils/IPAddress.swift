@@ -53,7 +53,7 @@ internal final class IPAddress {
         }
     }
     
-    /// Converts a human-readable IPv4 address to a in-addr arpa DNS name for PTR lookups
+    /// Converts a human-readable IPv4 address to an in-addr arpa DNS name for PTR lookups
     /// - Parameter v4: An IPv4 address in human form "1.2.3.4"
     /// - Returns: A DNS name label for PTR records, "4.3.2.1.in-addr.arpa"
     static func v4ToArpaName(_ v4: String) throws -> String {
@@ -64,7 +64,7 @@ internal final class IPAddress {
         return octets.reversed().joined(separator: ".") + ".in-addr.arpa"
     }
     
-    /// Converts a human-readable IPv6 address to a ip6 addr DNS name for PTR lookups.
+    /// Converts a human-readable IPv6 address to an ip6 addr DNS name for PTR lookups.
     /// - Parameter v6: An IPv6 address in human form "2001::1"
     /// - Returns: A DNS name label for PTR records.
     static func v6ToArpaName(_ v6: String) throws -> String {

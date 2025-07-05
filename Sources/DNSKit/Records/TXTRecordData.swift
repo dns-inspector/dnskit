@@ -23,7 +23,7 @@ public struct TXTRecordData: RecordData {
 
     internal init(recordData: Data) throws {
         // TXT RDATA format is a collection of one or more strings, which are: length (uint8) + data
-        // No encoding is defined, so we'll assumt UTF-8 and throw caution to the wind.
+        // No encoding is defined, so we'll assume UTF-8 and throw caution to the wind.
 
         var recordText = String()
         var moreToRead = true

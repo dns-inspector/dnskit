@@ -26,7 +26,7 @@ public enum DNSKitError: Error, Sendable {
     case unexpectedResponse(Error)
     /// The server returned no data
     case emptyResponse
-    /// An internal error occured while processing the data. More details are available.
+    /// An internal error occurred while processing the data. More details are available.
     case invalidData(String)
     /// Data that was required to complete the operation was not present. More details are available.
     case missingData(String)
@@ -72,6 +72,6 @@ public enum DNSSECError: Error, Sendable {
     case invalidResponse(String)
     /// The signing key provided was invalid. More details are available.
     case badSigningKey(String)
-    /// An internal processing error occured. This indicates a bug with DNSKit. More details are available.
+    /// An internal processing error occurred. This indicates a bug with DNSKit. More details are available.
     case internalError(String)
 }

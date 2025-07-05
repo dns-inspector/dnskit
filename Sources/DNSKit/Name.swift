@@ -163,7 +163,7 @@ public class Name {
         return n.components(separatedBy: ".")
     }
 
-    /// Return all of the qualified parent names from the given name.
+    /// Returns all the qualified parent names from the given name.
     /// For example, given 'foo.example.com', returns ['example.com.', 'com.', '.']
     /// - Parameter name: The DNS name.
     /// - Returns: An array of labels

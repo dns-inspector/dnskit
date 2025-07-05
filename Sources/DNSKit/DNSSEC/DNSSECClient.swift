@@ -30,6 +30,7 @@ internal struct DNSSECClient {
         var resources = try DNSSECResourceCollector.getAllDNSSECResources(zones: zonesToFetch, client: client)
         return try authenticateMessage(message, withResources: &resources)
     }
+
     /// Authenticate the given message by verifying its signatures and establishing a chain-of-trust for all
     /// zones and parent zones in the message.
     /// - Parameters:

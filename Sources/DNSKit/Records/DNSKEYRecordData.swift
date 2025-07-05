@@ -17,7 +17,7 @@
 import Foundation
 import CommonCrypto
 
-/// Describes the record data for an DNSKEY record
+/// Describes the record data for a DNSKEY record
 public struct DNSKEYRecordData: RecordData {
     /// If this key is the zone key
     public let zoneKey: Bool

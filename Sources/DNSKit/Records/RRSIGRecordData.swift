@@ -16,7 +16,7 @@
 
 import Foundation
 
-/// Describes the record data for a RRSIG record
+/// Describes the record data for an RRSIG record
 public struct RRSIGRecordData: RecordData {
     /// The record type covered by this signature
     public let typeCovered: RecordType

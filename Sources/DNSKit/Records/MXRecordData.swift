@@ -16,7 +16,7 @@
 
 import Foundation
 
-/// Describes the record data for a MX record
+/// Describes the record data for an MX record
 public struct MXRecordData: RecordData, CompressibleRecordData {
     /// The record priority
     public let priority: UInt16

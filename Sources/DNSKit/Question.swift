@@ -31,7 +31,7 @@ public struct Question: Sendable {
         
         var name = name
         
-        // Conveience: if the question is a PTR record and a bare IP address was passed in, automatically convert the address to the correct PTR format
+        // Convenience: if the question is a PTR record and a bare IP address was passed in, automatically convert the address to the correct PTR format
         if recordType == .PTR && !name.contains(".in-addr.arpa") && !name.contains("ip6.arpa") {
             do {
                 if name.contains(":") {

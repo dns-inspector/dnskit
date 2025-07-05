@@ -38,7 +38,7 @@ public struct Message: Sendable {
     public let answers: [Answer]
     /// If DNSSEC is ok
     public let dnssecOK: Bool
-    /// The amount of time (in nanoseconds) it took to recieve this message in response to our question
+    /// The amount of time (in nanoseconds) it took to receive this message in response to our question
     public let duration: UInt64
 
     internal init(idNumber: UInt16 = UInt16.random(), question: Question, dnssecOK: Bool) {

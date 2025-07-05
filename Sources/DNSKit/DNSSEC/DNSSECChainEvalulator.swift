@@ -16,12 +16,12 @@
 
 import Foundation
 
-/// Subnet of the DNSSEC Client for evalulating a chain-of-trust
+/// Subnet of the DNSSEC Client for evaluating a chain-of-trust
 internal struct DNSSECChainEvalulator {
-    /// Evalulate the zone delegation and establish a chain-of-trust to the root zone
+    /// Evaluate the zone delegation and establish a chain-of-trust to the root zone
     /// - Parameters:
     ///   - zones: The zones to use. Should be the output from ``DNSSECResourceCollector.getAllZonesInAnswers``.
-    ///   - resources: The resources to reference
+    ///   - Resources: The resources to reference
     ///   - keyMap: The key map to reference
     internal static func evalulateChain(ofZones zones: [String], withResources resources: inout [String: (Message, Message?)], andKeyMap keyMap: inout [UInt32: Answer]) throws {
         for startZone in zones {

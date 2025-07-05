@@ -49,7 +49,7 @@ public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertib
         return "\(self.name) \(self.ttlSeconds) \(self.recordClass.string()) \(self.recordType.string()) \(self.data.description)"
     }
 
-    /// A hexedecimal representation of the record data for this answer
+    /// A hexadecimal representation of the record data for this answer
     public var hexValue: String {
         return self.recordData.hexEncodedString()
     }
