@@ -83,18 +83,21 @@ def get_tld_servers():
 gtld_list = get_gtld_list()
 tld_servers = get_tld_servers()
 
-file = ""
-with open("../../../.github/license-header.txt", "r") as file:
-    license_header_template = file.read().rstrip()
-    license_header_template = license_header_template.replace("##YEAR##", datetime.now().strftime("%Y"))
-    lines = license_header_template.split("\n")
-    i = 0
-    while i < len(lines):
-        lines[i] = "// " + lines[i]
-        i = i + 1
-    file = "\n".join(lines)
-
-file = file + """
+file = """// DNSKit
+// Copyright (C) Ian Spence and other DNSKit Contributors
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // swiftlint:disable all
 import Foundation
