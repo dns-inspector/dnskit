@@ -24,6 +24,28 @@ public struct Question: Sendable {
     public let recordType: RecordType
     /// The resource's record class
     public let recordClass: RecordClass
+    
+    public init(name: String, recordType: RecordType, recordClass: RecordClass) {
+        self.recordType = recordType
+        self.recordClass = recordClass
+        
+        var name = name
+        
+        // Conveience: if the question is a PTR record and a bare IP address was passed in, automatically convert the address to the correct PTR format
+        if recordType == .PTR && !name.contains(".in-addr.arpa") && !name.contains("ip6.arpa") {
+            do {
+                if name.contains(":") {
+                    name = try IPAddress.v6ToArpaName(name)
+                } else {
+                    name = try IPAddress.v4ToArpaName(name)
+                }
+            } catch {
+                printError("[\(#fileID):\(#line)] Unable to convert IP address to arpa name: \(error)")
+            }
+        }
+        
+        self.name = name
+    }
 
     internal func data() throws -> Data {
         var data = Data()

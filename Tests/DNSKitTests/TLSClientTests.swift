@@ -21,6 +21,10 @@ final class TLSClientTests: XCTestCase, IClientTests {
     func testQuery() async throws {
         try await ClientTests(transportType: .TLS, serverAddress: "1.1.1.1").testQuery()
     }
+    
+    func testPTRQuery() async throws {
+        try await ClientTests(transportType: .TLS, serverAddress: "1.1.1.1").testPTRQuery()
+    }
 
     func testQueryNXDOMAIN() async throws {
         try await ClientTests(transportType: .TLS, serverAddress: "1.1.1.1:853").testQueryNXDOMAIN()

@@ -19,6 +19,7 @@ import XCTest
 
 protocol IClientTests {
     func testQuery() async throws
+    func testPTRQuery() async throws
     func testQueryNXDOMAIN() async throws
     func testAuthenticateMessageA() async throws
     func testAuthenticateMessageSOA() async throws
@@ -48,6 +49,16 @@ final class ClientTests {
         XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
         XCTAssertEqual(reply.answers[0].recordType, .A, "Answer must include an A record")
         XCTAssertNotNil(reply.answers[0].data as? ARecordData, "Answer must include data")
+    }
+    
+    func testPTRQuery() async throws {
+        let query = Query(client: client, recordType: .PTR, name: "8.8.4.4")
+        let reply = try await query.execute()
+        XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
+        XCTAssertEqual(reply.answers[0].recordType, .PTR, "Answer must include an PTR record")
+        XCTAssertNotNil(reply.answers[0].data as? PTRRecordData, "Answer must include data")
+        let data = reply.answers[0].data as! PTRRecordData
+        XCTAssertEqual(data.name, "dns.google.", "Answer must be expected")
     }
 
     func testQueryNXDOMAIN() async throws {

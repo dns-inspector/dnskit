@@ -21,6 +21,10 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     func testQuery() async throws {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testQuery()
     }
+    
+    func testPTRQuery() async throws {
+        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testPTRQuery()
+    }
 
     func testQueryNXDOMAIN() async throws {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testQueryNXDOMAIN()

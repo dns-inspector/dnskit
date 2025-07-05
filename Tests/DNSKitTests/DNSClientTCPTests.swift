@@ -21,6 +21,10 @@ final class DNSClientTCPTests: XCTestCase, IClientTests {
     func testQuery() async throws {
         try await ClientTests(transportType: .DNS, transportOptions: TransportOptions(dnsPrefersTcp: true), serverAddress: "1.1.1.1:53").testQuery()
     }
+    
+    func testPTRQuery() async throws {
+        try await ClientTests(transportType: .DNS, transportOptions: TransportOptions(dnsPrefersTcp: true), serverAddress: "1.1.1.1:53").testPTRQuery()
+    }
 
     func testQueryNXDOMAIN() async throws {
         try await ClientTests(transportType: .DNS, transportOptions: TransportOptions(dnsPrefersTcp: true), serverAddress: "1.1.1.1:53").testQueryNXDOMAIN()
