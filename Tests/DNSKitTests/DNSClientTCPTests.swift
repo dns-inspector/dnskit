@@ -42,6 +42,10 @@ final class DNSClientTCPTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .DNS, transportOptions: TransportOptions(dnsPrefersTcp: true), serverAddress: "1.1.1.1:53").testAuthenticateRoot()
     }
 
+    func testAuthenticateTLD() async throws {
+        try await ClientTests(transportType: .DNS, transportOptions: TransportOptions(dnsPrefersTcp: true), serverAddress: "1.1.1.1:53").testAuthenticateTLD()
+    }
+
     func testAuthenticateCNAME() async throws {
         try await ClientTests(transportType: .DNS, transportOptions: TransportOptions(dnsPrefersTcp: true), serverAddress: "1.1.1.1:53").testAuthenticateCNAME()
     }

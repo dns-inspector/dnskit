@@ -23,6 +23,8 @@ protocol IClientTests {
     func testQueryNXDOMAIN() async throws
     func testAuthenticateMessageA() async throws
     func testAuthenticateMessageSOA() async throws
+    func testAuthenticateRoot() async throws
+    func testAuthenticateTLD() async throws
     func testLocalRandomData() async throws
     func testLocalLengthOver() async throws
     func testLocalLengthUnder() async throws
@@ -84,6 +86,13 @@ final class ClientTests {
 
     func testAuthenticateRoot() async throws {
         let query = Query(client: client, recordType: .SOA, name: ".", queryOptions: QueryOptions(dnssecRequested: true))
+        let reply = try await query.execute()
+        let result = try await query.authenticate(message: reply)
+        XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
+    }
+
+    func testAuthenticateTLD() async throws {
+        let query = Query(client: client, recordType: .SOA, name: "com.", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")

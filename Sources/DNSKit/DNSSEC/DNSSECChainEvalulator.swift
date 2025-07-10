@@ -25,11 +25,10 @@ internal struct DNSSECChainEvalulator {
     ///   - keyMap: The key map to reference
     internal static func evalulateChain(ofZones zones: [String], withResources resources: inout [String: (Message, Message?)], andKeyMap keyMap: inout [UInt32: Answer]) throws {
         for startZone in zones {
-            let parents = Name.parentNames(from: startZone)
+            var parents = Name.parentNames(from: startZone)
+            parents.removeLast() // remove the root zone at the end since it doesn't have a DS
 
-            for i in 0...parents.count-2 { // -2 because the root doesn't have a DS
-                let zone = parents[i]
-
+            for zone in parents {
                 guard let (_, dsMessage) = resources[zone], let dsMessage = dsMessage else {
                     printError("[\(#fileID):\(#line)] No DS record found for \(zone)")
                     throw DNSSECError.noSignatures("No DS record for \(zone)")
