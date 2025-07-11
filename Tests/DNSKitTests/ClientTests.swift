@@ -42,6 +42,12 @@ final class ClientTests {
             self.client = try TLSClient(address: serverAddress, transportOptions: transportOptions)
         case .HTTPS:
             self.client = try HTTPClient(address: serverAddress, transportOptions: transportOptions)
+        case .QUIC:
+            if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+                self.client = try QuicClient(address: serverAddress, transportOptions: transportOptions)
+            } else {
+                fatalError("Attempted to use Quic client on unsupported platform")
+            }
         }
     }
 

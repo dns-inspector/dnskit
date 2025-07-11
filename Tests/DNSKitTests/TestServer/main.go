@@ -36,26 +36,27 @@ func main() {
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 
-		if arg == "-g" {
+		switch arg {
+		case "-g":
 			if err := generateRoot(); err != nil {
 				panic(err)
 			}
 			os.Exit(0)
-		} else if arg == "-c" || arg == "--cert" {
+		case "-c", "--cert":
 			if i == len(args)-1 {
 				fmt.Fprintf(os.Stderr, "Argument %s requires a value\n", arg)
 				os.Exit(1)
 			}
 			rootCertPath = args[i+1]
 			i++
-		} else if arg == "-k" || arg == "--key" {
+		case "-k", "--key":
 			if i == len(args)-1 {
 				fmt.Fprintf(os.Stderr, "Argument %s requires a value\n", arg)
 				os.Exit(1)
 			}
 			rootKeyPath = args[i+1]
 			i++
-		} else if arg == "-p" || arg == "--start-port" {
+		case "-p", "--start-port":
 			if i == len(args)-1 {
 				fmt.Fprintf(os.Stderr, "Argument %s requires a value\n", arg)
 				os.Exit(1)
@@ -67,28 +68,28 @@ func main() {
 			}
 			startPort = uint16(v)
 			i++
-		} else if arg == "--bind-ipv4" {
+		case "--bind-ipv4":
 			if i == len(args)-1 {
 				fmt.Fprintf(os.Stderr, "Argument %s requires a value\n", arg)
 				os.Exit(1)
 			}
 			bindIP4 = args[i+1]
 			i++
-		} else if arg == "--bind-ipv6" {
+		case "--bind-ipv6":
 			if i == len(args)-1 {
 				fmt.Fprintf(os.Stderr, "Argument %s requires a value\n", arg)
 				os.Exit(1)
 			}
 			bindIP6 = args[i+1]
 			i++
-		} else if arg == "--servername" {
+		case "--servername":
 			if i == len(args)-1 {
 				fmt.Fprintf(os.Stderr, "Argument %s requires a value\n", arg)
 				os.Exit(1)
 			}
 			servername = args[i+1]
 			i++
-		} else {
+		default:
 			fmt.Printf(`Usage: %s <Options>
 Required options:
 -g                                Generate a new root certificate and private key and exit.
@@ -127,6 +128,7 @@ func start(startPort uint16, ipv4 string, ipv6 string, servername string) {
 		&tserverDNSTCP{},
 		&tserverDNSOverHTTPS{},
 		&tserverDNSOverTLS{},
+		&tserverDNSOverQuic{},
 	}
 
 	port := startPort

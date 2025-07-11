@@ -6,10 +6,10 @@ An asynchronous DNS library for Swift.
 
 DNSKit provides a wide array of support across the DNS ecosystem, including:
 
-- Native support for most common DNS record types
-- Support for DNS over HTTPS, DNS over TLS, DNS over TCP, and DNS over UDP
-- Full DNSSEC signature validation & chain trust establishment
-- WHOIS client for domain information
+- Native support for most common DNS record types.
+- Support for DNS over HTTPS, DNS over TLS, DNS over Quic, and traditional DNS using TCP or UDP.
+- Full DNSSEC signature validation & chain trust establishment.
+- WHOIS client for domain information.
 
 ### License
 

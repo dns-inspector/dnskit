@@ -56,9 +56,14 @@ public enum RecordClass: UInt16, Codable, CaseIterable, Sendable {
 
 /// Transport options
 public enum TransportType: String, Codable, CaseIterable, Sendable {
+    /// Traditional DNS, plain-text
     case DNS = "dns"
+    /// DNS over TLS
     case TLS = "tls"
+    /// DNS over HTTPS
     case HTTPS = "https"
+    /// DNS over Quic
+    case QUIC = "quic"
 
     public func string() -> String {
         return String(describing: self)

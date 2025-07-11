@@ -102,6 +102,12 @@ public struct Query: Sendable {
             self.client = try TLSClient(address: serverAddress, transportOptions: transportOptions)
         case .HTTPS:
             self.client = try HTTPClient(address: serverAddress, transportOptions: transportOptions)
+        case .QUIC:
+            if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+                self.client = try QuicClient(address: serverAddress, transportOptions: transportOptions)
+            } else {
+                fatalError("Attempted to use quic on unsupported target")
+            }
         }
     }
 
@@ -158,6 +164,12 @@ public struct Query: Sendable {
                 _ = try TLSClient(address: serverAddress, transportOptions: TransportOptions())
             case .HTTPS:
                 _ = try HTTPClient(address: serverAddress, transportOptions: TransportOptions())
+            case .QUIC:
+                if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+                    _ = try QuicClient(address: serverAddress, transportOptions: TransportOptions())
+                } else {
+                    fatalError("Attempted to use quic on unsupported target")
+                }
             }
             return nil
 

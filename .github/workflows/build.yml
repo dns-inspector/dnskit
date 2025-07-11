@@ -90,9 +90,9 @@ jobs:
         run: |
           cd Tests/DNSKitTests/TestServer
           echo "Compiling test server"
-          CGO_ENABLED=0 go build
+          CGO_ENABLED=0 go build -o testserver
           echo "Generating certifiate & key"
-          ./TestServer -g
+          ./testserver -g
           xcrun simctl boot "${{ env.TEST_DEVICE }}"
           xcrun simctl keychain "${{ env.TEST_DEVICE }}" add-root-cert ./root.crt
 
@@ -101,7 +101,7 @@ jobs:
         shell: bash
         run: |
           cd Tests/DNSKitTests/TestServer
-          nohup ./TestServer -c root.crt -k root.key &
+          nohup ./testserver -c root.crt -k root.key &
 
       - name: Run Automated Tests
         id: certificatekit_tests
