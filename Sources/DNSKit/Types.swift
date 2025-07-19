@@ -23,6 +23,7 @@ public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
     case CNAME = 5
     case SOA = 6
     case AAAA = 28
+    case LOC = 29
     case SRV = 33
     case TXT = 16
     case MX = 15

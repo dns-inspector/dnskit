@@ -176,6 +176,8 @@ public struct Message: Sendable {
                     recordData = try SOARecordData(messageData: messageData, startOffset: valueStartOffset)
                 case .AAAA:
                     recordData = try AAAARecordData(ipAddress: value)
+                case .LOC:
+                    recordData = try LOCRecordData(messageData: messageData, startOffset: valueStartOffset)
                 case .SRV:
                     recordData = try SRVRecordData(messageData: messageData, startOffset: valueStartOffset)
                 case .TXT:

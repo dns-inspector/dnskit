@@ -307,4 +307,30 @@ final class MessageTests: XCTestCase {
         XCTAssertEqual(data.ech?.base64EncodedString(), "AFn+DQBVBQAgACCrYULXKo3XQ2v4d4iN/4CXP0i26I3LwPaQ07RmPhvQBAAkAAEAAQABAAIAAQADAAIAAQACAAIAAgADAAMAAQADAAIAAwADAAZlY24uaW8AAA==")
         XCTAssertEqual(data.description, "1 . no-default-alpn=\"\" alpn=\"h3,h2\" port=\"443\" ipv4hint=\"127.0.0.1,127.0.0.2\" ipv6hint=\"::1,::2\" ech=\"AFn+DQBVBQAgACCrYULXKo3XQ2v4d4iN/4CXP0i26I3LwPaQ07RmPhvQBAAkAAEAAQABAAIAAQADAAIAAQACAAIAAgADAAMAAQADAAIAAwADAAZlY24uaW8AAA==\"")
     }
+
+    func testParseDNSLOCMesage() throws {
+        let data = Data([ 0x4e, 0x7e, 0x85, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x07, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x1d, 0x00, 0x01, 0xc0, 0x0c, 0x00, 0x1d, 0x00, 0x01, 0x00, 0x00, 0x0e, 0x10, 0x00, 0x10, 0x00, 0x23, 0x13, 0x13, 0x88, 0x1b, 0x80, 0x20, 0x65, 0xbb, 0x73, 0xa0, 0x00, 0x98, 0x90, 0xa4, 0x00, 0x00, 0x29, 0x04, 0xd0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ])
+        let message = try Message(messageData: data)
+        XCTAssertEqual(message.questions.count, 1)
+        XCTAssertEqual(message.answers.count, 1)
+        XCTAssertEqual(message.questions[0].name, "example.com.")
+        XCTAssertEqual(message.answers[0].name, "example.com.")
+        XCTAssertEqual(message.answers[0].ttlSeconds, 3600)
+        XCTAssertEqual(message.answers[0].recordType, .LOC)
+        guard let data = message.answers[0].data as? LOCRecordData else { fatalError("answer data incorrect type") }
+        XCTAssertEqual(data.size, 35)
+        XCTAssertEqual(data.sizeMeters, 20.0)
+        XCTAssertEqual(data.altitude, 9998500)
+        XCTAssertEqual(data.altitudeMeters, -15.0)
+        XCTAssertEqual(data.horizontalPrecision, 19)
+        XCTAssertEqual(data.horizontalPrecisionMeters, 10.0)
+        XCTAssertEqual(data.verticalPrecision, 19)
+        XCTAssertEqual(data.verticalPrecisionMeters, 10.0)
+        XCTAssertEqual(data.latitude, 2283503648)
+        XCTAssertEqual(data.longitude, 1706783648)
+        let (latitude, longitude) = data.degrees()
+        XCTAssertEqual(latitude, "37 deg 47 min 00.000 sec N")
+        XCTAssertEqual(longitude, "122 deg 25 min 00.000 sec W")
+        XCTAssertEqual(message.answers[0].description, "example.com. 3600 IN LOC 37 47 0.0 N 122 25 0.0 W -15.00m 20.00m 10.00m 10.00m")
+    }
 }
