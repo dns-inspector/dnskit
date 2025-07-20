@@ -1,0 +1,47 @@
+name: "Build Documentation"
+
+on:
+  push:
+    paths:
+      - '.github/workflows/docs.yml'
+      - 'Sources/**'
+      - 'Package.swift'
+  pull_request:
+    paths:
+      - '.github/workflows/docs.yml'
+      - 'Sources/**'
+      - 'Package.swift'
+  workflow_dispatch:
+
+permissions:
+  packages: read
+
+jobs:
+  build:
+    name: "Build Documentation"
+    runs-on: macos-15
+    steps:
+      - name: "Checkout Source"
+        id: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #pin v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: "Prepare Build Environment"
+        id: prepare
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+          xcode-select -p
+
+      - name: "Compile Documentation"
+        id: compile_docs
+        run: |
+          swift package add-dependency "https://github.com/apple/swift-docc-plugin" --revision 3e4f133a77e644a5812911a0513aeb7288b07d06
+          swift package --allow-writing-to-directory docs generate-documentation --target DNSKit --disable-indexing --output-path docs --transform-for-static-hosting --hosting-base-path dnskit
+
+      - name: "Archive Documentation"
+        id: archive_docs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #pin v4.6.2
+        with:
+          name: docs
+          path: docs/

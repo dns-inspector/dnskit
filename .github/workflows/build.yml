@@ -1,4 +1,4 @@
-name: "Build Package"
+name: "Build & Test Package"
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
     name: "Build Package"
     runs-on: macos-15
     steps:
-      - name: Checkout Source
+      - name: "Checkout Source"
         id: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #pin v4.2.2
         with:
@@ -44,7 +44,7 @@ jobs:
           mkdir -p /Users/runner/derived_data
           echo "SWIFTLINT_CACHE_KEY=swiftlint_$(gh api repos/realm/swiftlint/releases/latest --jq '.assets[] | select(.name == "portable_swiftlint.zip") | .id')" >> "$GITHUB_OUTPUT"
 
-      - name: Restore Cached SwiftLint
+      - name: "Restore Cached SwiftLint"
         id: restore_swiftlint
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 #pin v4.2.3
         with:
@@ -52,7 +52,7 @@ jobs:
           path: |
             /Users/runner/bin/swiftlint
 
-      - name: Install SwiftLint
+      - name: "Install SwiftLint"
         id: install_swiftlint
         if: ${{ steps.restore_swiftlint.outputs.cache-hit != 'true' }}
         env:
@@ -66,7 +66,7 @@ jobs:
           rm swiftlint.zip LICENSE
           chmod a+x swiftlint
 
-      - name: Install Go
+      - name: "Install Go"
         id: install_go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 #pin v5.5.0
         with:
@@ -85,7 +85,7 @@ jobs:
         run: |
           xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' build
 
-      - name: Prepare Test Server
+      - name: "Prepare Test Server"
         id: testserver_prepare
         run: |
           cd Tests/DNSKitTests/TestServer
@@ -96,14 +96,14 @@ jobs:
           xcrun simctl boot "${{ env.TEST_DEVICE }}"
           xcrun simctl keychain "${{ env.TEST_DEVICE }}" add-root-cert ./root.crt
 
-      - name: Start Test Server
+      - name: "Start Test Server"
         id: testserver_start
         shell: bash
         run: |
           cd Tests/DNSKitTests/TestServer
           nohup ./testserver -c root.crt -k root.key &
 
-      - name: Run Automated Tests
+      - name: "Run Automated Tests"
         id: certificatekit_tests
         run: |
           xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' test

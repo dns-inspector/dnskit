@@ -8,3 +8,4 @@ DerivedData/
 Tests/DNSKitTests/TestServer/*
 !Tests/DNSKitTests/TestServer/*.go
 !Tests/DNSKitTests/TestServer/go.*
+/docs/
