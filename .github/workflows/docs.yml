@@ -38,10 +38,12 @@ jobs:
         run: |
           swift package add-dependency "https://github.com/apple/swift-docc-plugin" --revision 3e4f133a77e644a5812911a0513aeb7288b07d06
           swift package --allow-writing-to-directory docs generate-documentation --target DNSKit --disable-indexing --output-path docs --transform-for-static-hosting --hosting-base-path dnskit
+          tar -cf docs.tar docs/
+          rm -rf docs/
 
       - name: "Archive Documentation"
         id: archive_docs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #pin v4.6.2
         with:
           name: docs
-          path: docs/
+          path: docs.tar
