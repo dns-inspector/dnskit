@@ -37,7 +37,7 @@ jobs:
         id: compile_docs
         run: |
           swift package add-dependency "https://github.com/apple/swift-docc-plugin" --revision 3e4f133a77e644a5812911a0513aeb7288b07d06
-          swift package --allow-writing-to-directory docs generate-documentation --target DNSKit --disable-indexing --output-path docs --transform-for-static-hosting --hosting-base-path dnskit
+          swift package --allow-writing-to-directory docs generate-documentation --target DNSKit --disable-indexing --output-path docs --transform-for-static-hosting
           tar -cf docs.tar docs/
           rm -rf docs/
 
