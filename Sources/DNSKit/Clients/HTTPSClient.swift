@@ -52,7 +52,7 @@ internal final class HTTPClient: IClient {
 
         let questionData: Data
         do {
-            questionData = try message.data()
+            questionData = try message.data(withZeroId: true) // RFC8484 4.1
         } catch {
             complete(.failure(.invalidData(error.localizedDescription)))
             return
@@ -73,7 +73,11 @@ internal final class HTTPClient: IClient {
             return
         }
 
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
+        request.setValue("application/dns-message", forHTTPHeaderField: "Accept")
+        if let userAgent = transportOptions.userAgent {
+            request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        }
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         sessionConfig.timeoutIntervalForResource = TimeInterval(self.transportOptions.timeout)

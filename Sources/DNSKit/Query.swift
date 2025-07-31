@@ -30,10 +30,16 @@ public struct TransportOptions: Sendable {
     /// The default value is 5 seconds.
     public var timeout: UInt8 = 5
 
+    /// The user agent to provide. Only applies to the DNS over HTTPS client.
+    ///
+    /// The default is to let the system set the user agent, which typically is the name of the running app.
+    public var userAgent: String?
+
     /// Create a new set of transport options. All variables are optional and will use their default values.
-    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5) {
+    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil) {
         self.dnsPrefersTcp = dnsPrefersTcp
         self.timeout = timeout
+        self.userAgent = userAgent
     }
 
     internal var timeoutDispatchTime: DispatchTime {

@@ -212,11 +212,15 @@ public struct Message: Sendable {
         return (answers, answerStartOffset)
     }
 
-    internal func data(withLength: Bool = false) throws -> Data {
+    internal func data(withZeroId: Bool = false, withLength: Bool = false) throws -> Data {
         var request = Data()
 
-        withUnsafePointer(to: self.idNumber.bigEndian) { idn in
-            request.append(Data(bytes: idn, count: 2))
+        if withZeroId {
+            request.append(Data([0x00, 0x00]))
+        } else {
+            withUnsafePointer(to: self.idNumber.bigEndian) { idn in
+                request.append(Data(bytes: idn, count: 2))
+            }
         }
 
         let flags: UInt16 = 0x0120
