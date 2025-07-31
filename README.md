@@ -79,4 +79,4 @@ func checkDNSSEC() async throws {
 }
 ```
 
-[**View DNSKit's API Documentation Online >>**](https://swiftpackageindex.com/dns-inspector/dnskit/documentation/dnskit)
+[**View DNSKit's API Documentation Online >>**](https://dnskit.dns-inspector.com)
