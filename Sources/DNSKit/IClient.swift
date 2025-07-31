@@ -36,6 +36,5 @@ internal protocol IClient: Sendable {
     ///   - complete: Callback called when complete with the result of the authentication
     /// - Throws: Will throw on any fatal error while collecting required information.
     /// This method will perform multiple queries in relation to the number of zones within the name.
-    /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
     func authenticate(message: Message, complete: @escaping @Sendable (Result<DNSSECResult, Error>) -> Void)
 }

@@ -190,7 +190,6 @@ public struct Query: Sendable {
     /// - Returns: The result from the DNSSEC authentication
     /// - Throws: Will throw on any fatal error while collecting required information.
     /// This method will perform multiple queries in relation to the number of zones within the name.
-    /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
     @available(iOS 13.0, macOS 10.15, *)
     public func authenticate(message: Message) async throws -> DNSSECResult {
         return try await withCheckedThrowingContinuation { continuation in
@@ -205,7 +204,6 @@ public struct Query: Sendable {
     ///   - message: The message to authenticate. This message must be a response to a query where ``QueryOptions/dnssecRequested`` was set
     ///   - complete: Callback called when complete with the result of the authentication
     /// This method will perform multiple queries in relation to the number of zones within the name.
-    /// > Warning: DNSSEC authentication is a new feature to DNSKit and should not be relied upon for any critical situations.
     public func authenticate(message: Message, complete: @Sendable @escaping (Result<DNSSECResult, Error>) -> Void) {
         self.client.authenticate(message: message, complete: complete)
     }
