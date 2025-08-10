@@ -25,15 +25,18 @@ public struct TXTRecordData: RecordData {
         // TXT RDATA format is a collection of one or more strings, which are: length (uint8) + data
         // No encoding is defined, so we'll assume UTF-8 and throw caution to the wind.
 
-        var recordText = String()
         var moreToRead = true
         var offset = Int(0)
+
+        var textData = Data()
 
         while moreToRead {
             let length = recordData.withUnsafeBytes {
                 return $0.loadUnaligned(fromByteOffset: offset, as: UInt8.self)
             }
+            print("Reading \(length)B of data")
             if length == 0 {
+                print("Pack it up, we're done here")
                 moreToRead = false
                 break
             }
@@ -43,11 +46,8 @@ public struct TXTRecordData: RecordData {
 
             offset += 1
             let data = recordData.subdata(in: offset..<offset+Int(length))
-            guard let text = String(data: data, encoding: .utf8) else {
-                throw DNSKitError.invalidData("Unable to decode TXT RDATA as UTF8 bytes")
-            }
-
-            recordText.append(text)
+            print("Data: \(data.hexEncodedString())")
+            textData.append(data)
             offset += Int(length)
 
             if (recordData.count - 1) <= offset {
@@ -55,7 +55,10 @@ public struct TXTRecordData: RecordData {
             }
         }
 
-        self.text = recordText
+        guard let text = String(data: textData, encoding: .utf8) else {
+            throw DNSKitError.invalidData("Unable to decode TXT RDATA as UTF8 bytes")
+        }
+        self.text = text
     }
 
     public var description: String {
