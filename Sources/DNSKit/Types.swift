@@ -85,7 +85,7 @@ public enum TransportType: String, Codable, CaseIterable, Sendable {
     ///
     /// Expcts the server address to be a `https://` URL. Do not include the `dns=` query parameter.
     ///
-    /// The IP address of the server can be specified with ``TransportOptions/httpsServerAddress``
+    /// The IP address of the server can be specified with ``TransportOptions/httpsBootstrapIp``
     case HTTPS = "https"
     /// DNS over Quic
     ///

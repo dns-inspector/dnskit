@@ -43,14 +43,14 @@ public struct TransportOptions: Sendable {
     ///
     /// When specified, the DNS over HTTPS client will connect to this IP address and avoid doing a DNS query for the host address
     /// if one is specified in the server URL.
-    public var httpsServerAddress: String?
+    public var httpsBootstrapIp: String?
 
     /// Create a new set of transport options. All variables are optional and will use their default values.
-    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsServerAddress: String? = nil) {
+    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIp: String? = nil) {
         self.dnsPrefersTcp = dnsPrefersTcp
         self.timeout = timeout
         self.userAgent = userAgent
-        self.httpsServerAddress = httpsServerAddress
+        self.httpsBootstrapIp = httpsBootstrapIp
     }
 
     internal var timeoutDispatchTime: DispatchTime {

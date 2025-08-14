@@ -37,8 +37,8 @@ internal final class HTTPClient: IClient {
             throw DNSKitError.invalidUrl
         }
 
-        if let serverAddress = transportOptions.httpsServerAddress {
-            self.endpoint = NWEndpoint.socketAddress(try SocketAddress(addressString: serverAddress), defaultPort: 443)
+        if let bootstrapIp = transportOptions.httpsBootstrapIp {
+            self.endpoint = NWEndpoint.socketAddress(try SocketAddress(addressString: bootstrapIp), defaultPort: 443)
         } else {
             let port = url.port ?? 443
             self.endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: NWEndpoint.Port(rawValue: UInt16(port))!)
