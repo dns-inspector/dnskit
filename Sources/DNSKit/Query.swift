@@ -32,14 +32,25 @@ public struct TransportOptions: Sendable {
 
     /// The user agent to provide. Only applies to the DNS over HTTPS client.
     ///
-    /// The default is to let the system set the user agent, which typically is the name of the running app.
+    /// The default user agent will take the format of:
+    /// ```
+    /// <bundleName>/<bundleVersion> (github.com/dns-inspector/dnskit)
+    /// ```
+    /// Where `<bundleName>` is the value of `CFBundleDisplayName` from the main bundle's info dictionary, and `<bundleVersion>` is the `CFBundleShortVersionString` value.
     public var userAgent: String?
 
+    /// The IP address of the DNS over HTTPS server.
+    ///
+    /// When specified, the DNS over HTTPS client will connect to this IP address and avoid doing a DNS query for the host address
+    /// if one is specified in the server URL.
+    public var httpsServerAddress: String?
+
     /// Create a new set of transport options. All variables are optional and will use their default values.
-    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil) {
+    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsServerAddress: String? = nil) {
         self.dnsPrefersTcp = dnsPrefersTcp
         self.timeout = timeout
         self.userAgent = userAgent
+        self.httpsServerAddress = httpsServerAddress
     }
 
     internal var timeoutDispatchTime: DispatchTime {

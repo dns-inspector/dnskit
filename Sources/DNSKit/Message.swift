@@ -18,7 +18,9 @@ import Foundation
 
 /// Describes a DNS message
 public struct Message: Sendable {
-    /// The message ID number
+    /// The message ID number.
+    ///
+    /// For messages sent to DNS over HTTPS servers, this number is always 0.
     public let idNumber: UInt16
     /// If recursion was desired
     public let recursionDesired: Bool

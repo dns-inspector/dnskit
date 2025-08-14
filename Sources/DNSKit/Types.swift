@@ -18,19 +18,33 @@ import Foundation
 
 /// DNS record types
 public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
+    /// Address record
     case A = 1
+    /// Name server record
     case NS = 2
+    /// Canonical name record
     case CNAME = 5
+    /// Start of authority record
     case SOA = 6
+    /// IPv6 Address record
     case AAAA = 28
+    /// Location record
     case LOC = 29
+    /// Service locator
     case SRV = 33
+    /// Text record
     case TXT = 16
+    /// Mail exchange record
     case MX = 15
+    /// Pointer record
     case PTR = 12
+    /// Delegation signer record
     case DS = 43
+    /// Resource record signature record
     case RRSIG = 46
+    /// DNS key record
     case DNSKEY = 48
+    /// HTTPS server information record
     case HTTPS = 65
 
     public func string() -> String {
@@ -57,13 +71,25 @@ public enum RecordClass: UInt16, Codable, CaseIterable, Sendable {
 
 /// Transport options
 public enum TransportType: String, Codable, CaseIterable, Sendable {
-    /// Traditional DNS, plain-text
+    /// Traditional DNS, plain-text.
+    ///
+    /// Expects the server address to be an IPv4 or IPv6 address with optional port, defaulting to 53..
+    ///
+    /// DNSKit supports both UDP and TCP, controlled by ``TransportOptions/dnsPrefersTcp``
     case DNS = "dns"
     /// DNS over TLS
+    ///
+    /// Expects the server address to be an IPv4 or IPv6 address with optional port, defaulting to 853.
     case TLS = "tls"
     /// DNS over HTTPS
+    ///
+    /// Expcts the server address to be a `https://` URL. Do not include the `dns=` query parameter.
+    ///
+    /// The IP address of the server can be specified with ``TransportOptions/httpsServerAddress``
     case HTTPS = "https"
     /// DNS over Quic
+    ///
+    /// Expects the server address to be an IPv4 or IPv6 address with optional port, defaulting to 853.
     case QUIC = "quic"
 
     public func string() -> String {
