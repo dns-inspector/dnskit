@@ -27,11 +27,11 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     }
 
     func testQueryNXDOMAIN() async throws {
-        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIp: "2603:1030:f02:3::3fd"), serverAddress: "https://dns.dns-inspector.com/dns-query").testQueryNXDOMAIN()
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIp: "20.47.87.112"), serverAddress: "https://dns.dns-inspector.com/dns-query").testQueryNXDOMAIN()
     }
 
     func testAuthenticateMessageA() async throws {
-        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIp: "2603:1030:f02:3::430"), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateMessageA()
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIp: "20.47.87.115"), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateMessageA()
     }
 
     func testAuthenticateMessageSOA() async throws {
@@ -39,7 +39,7 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     }
 
     func testAuthenticateRoot() async throws {
-        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIp: "[2603:1030:f02:3::3fd]:443"), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateRoot()
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIp: "20.47.87.115:443"), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateRoot()
     }
 
     func testAuthenticateTLD() async throws {
