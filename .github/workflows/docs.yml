@@ -16,6 +16,9 @@ on:
 permissions:
   packages: read
 
+env:
+  XCODE_VERSION: "Xcode_16.4" # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+
 jobs:
   build:
     name: "Build Documentation"
@@ -30,7 +33,9 @@ jobs:
       - name: "Prepare Build Environment"
         id: prepare
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+          echo "Switching to ${{ env.XCODE_VERSION }}"
+          sudo xcode-select -s /Applications/${{ env.XCODE_VERSION }}.app/Contents/Developer
+          xcode-select -p
           xcode-select -p
 
       - name: "Compile Documentation"
