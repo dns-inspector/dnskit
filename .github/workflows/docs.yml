@@ -17,12 +17,12 @@ permissions:
   packages: read
 
 env:
-  XCODE_VERSION: "Xcode_16.4" # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+  XCODE_VERSION: "Xcode_26.0" # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
 
 jobs:
   build:
     name: "Build Documentation"
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: "Checkout Source"
         id: checkout

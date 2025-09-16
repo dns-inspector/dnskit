@@ -21,13 +21,13 @@ permissions:
   packages: read
 
 env:
-  TEST_DEVICE: "iPhone 16 Pro"
-  XCODE_VERSION: "Xcode_16.4" # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+  TEST_DEVICE: "iPhone 17 Pro"
+  XCODE_VERSION: "Xcode_26.0" # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
 
 jobs:
   build:
     name: "Build Package"
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: "Checkout Source"
         id: checkout
