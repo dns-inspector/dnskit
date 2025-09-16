@@ -18,6 +18,8 @@ import Foundation
 
 /// All possible errors that DNSKit can produce
 public enum DNSKitError: Error, Sendable {
+    /// An internal error within DNSKit occured. More details are available.
+    case internalError(String)
     /// The connection to the target was unsuccessful. More details are available.
     case connectionError(Error)
     /// The remote host took too long to respond

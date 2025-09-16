@@ -39,18 +39,18 @@ public struct TransportOptions: Sendable {
     /// Where `<bundleName>` is the value of `CFBundleDisplayName` from the main bundle's info dictionary, and `<bundleVersion>` is the `CFBundleShortVersionString` value.
     public var userAgent: String?
 
-    /// The IP address of the DNS over HTTPS server.
+    /// One or more IP addresses of the DNS over HTTPS server.
     ///
-    /// When specified, the DNS over HTTPS client will connect to this IP address and avoid doing a DNS query for the host address
+    /// When specified, the DNS over HTTPS client will try to connect to all addresses and avoid doing a DNS query for the host address
     /// if one is specified in the server URL.
-    public var httpsBootstrapIp: String?
+    public var httpsBootstrapIps: [String]?
 
     /// Create a new set of transport options. All variables are optional and will use their default values.
-    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIp: String? = nil) {
+    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIps: [String]? = nil) {
         self.dnsPrefersTcp = dnsPrefersTcp
         self.timeout = timeout
         self.userAgent = userAgent
-        self.httpsBootstrapIp = httpsBootstrapIp
+        self.httpsBootstrapIps = httpsBootstrapIps
     }
 
     internal var timeoutDispatchTime: DispatchTime {
@@ -128,7 +128,13 @@ public final class Query: Sendable {
             case .TLS:
                 clients.append(try TLSClient(address: serverAddress, transportOptions: transportOptions))
             case .HTTPS:
-                clients.append(try HTTPClient(address: serverAddress, transportOptions: transportOptions))
+                if let bootstrapIps = transportOptions.httpsBootstrapIps {
+                    for bootstrapIp in bootstrapIps {
+                        clients.append(try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: transportOptions))
+                    }
+                } else {
+                    clients.append(try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions))
+                }
             case .QUIC:
                 if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
                     clients.append(try QuicClient(address: serverAddress, transportOptions: transportOptions))
@@ -188,6 +194,7 @@ public final class Query: Sendable {
     public func execute(withCallback complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let group = DispatchGroup()
         let results = AtomicArray<IndexWithResponse>(initialValue: [])
+        let didComplete = AtomicBool(initialValue: false)
         let message = self.message()
 
         for i in 0..<self.clients.count {
@@ -197,6 +204,12 @@ public final class Query: Sendable {
             group.enter()
             dispatchQueue.async {
                 client.send(message: message) { result in
+                    if case .success = result {
+                        didComplete.If(false) {
+                            complete(result)
+                            return true
+                        }
+                    }
                     results.Append(IndexWithResponse(index: i, result: result))
                     group.leave()
                 }
@@ -205,23 +218,18 @@ public final class Query: Sendable {
 
         group.wait()
 
+        if didComplete.Get() {
+            // We're already returned the first response
+            return
+        }
+
         if results.Count() == 0 {
             // This shouldn't happen but will cause a crash if it does
             complete(.failure(DNSKitError.timedOut))
             return
         }
 
-        // Try to find the first successful result
-        for object in results.Get() {
-            if case .success = object.result {
-                complete(object.result)
-                // Save this client for future use
-                self.reuseClient = self.clients[object.index]
-                return
-            }
-        }
-
-        // Otherwise just return the first result since none were successful
+        // No connection was successful so just return the first
         complete(results.Get(0).result)
     }
 
@@ -282,6 +290,7 @@ public final class Query: Sendable {
 
         let group = DispatchGroup()
         let results = AtomicArray<IndexWithDNSSECResult>(initialValue: [])
+        let didComplete = AtomicBool(initialValue: false)
 
         for i in 0..<self.clients.count {
             let client = self.clients[i]
@@ -290,6 +299,12 @@ public final class Query: Sendable {
             group.enter()
             dispatchQueue.async {
                 client.authenticate(message: message) { result in
+                    if case .success = result {
+                        didComplete.If(false) {
+                            complete(result)
+                            return true
+                        }
+                    }
                     results.Append(IndexWithDNSSECResult(index: i, result: result))
                     group.leave()
                 }
@@ -298,23 +313,18 @@ public final class Query: Sendable {
 
         group.wait()
 
+        if didComplete.Get() {
+            // We're already returned the first response
+            return
+        }
+
         if results.Count() == 0 {
             // This shouldn't happen but will cause a crash if it does
             complete(.failure(DNSKitError.timedOut))
             return
         }
 
-        // Try to find the first successful result
-        for object in results.Get() {
-            if case .success = object.result {
-                complete(object.result)
-                // Save this client for future use
-                self.reuseClient = self.clients[object.index]
-                return
-            }
-        }
-
-        // Otherwise just return the first result since none were successful
+        // No connection was successful so just return the first
         complete(results.Get(0).result)
     }
 }

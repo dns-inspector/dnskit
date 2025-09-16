@@ -41,7 +41,11 @@ final class ClientTests {
         case .TLS:
             self.client = try TLSClient(address: serverAddress, transportOptions: transportOptions)
         case .HTTPS:
-            self.client = try HTTPClient(address: serverAddress, transportOptions: transportOptions)
+            if let bootstrapIps = transportOptions.httpsBootstrapIps {
+                self.client = try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIps[0], transportOptions: transportOptions)
+            } else {
+                self.client = try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions)
+            }
         case .QUIC:
             if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
                 self.client = try QuicClient(address: serverAddress, transportOptions: transportOptions)

@@ -24,6 +24,10 @@ internal final class HTTPClient: IClient {
     fileprivate let endpoint: NWEndpoint
 
     required init(address: String, transportOptions: TransportOptions) throws {
+        throw DNSKitError.internalError("Not implemented. Use `HTTPClient(address,bootstrapIp,transportOptions)` instead.")
+    }
+
+    init(address: String, bootstrapIp: String?, transportOptions: TransportOptions) throws {
         var urlString = String(address.lowercased())
 
         if !urlString.contains("://") {
@@ -37,7 +41,7 @@ internal final class HTTPClient: IClient {
             throw DNSKitError.invalidUrl
         }
 
-        if let bootstrapIp = transportOptions.httpsBootstrapIp {
+        if let bootstrapIp = bootstrapIp {
             self.endpoint = NWEndpoint.socketAddress(try SocketAddress(addressString: bootstrapIp), defaultPort: 443)
         } else {
             let port = url.port ?? 443
