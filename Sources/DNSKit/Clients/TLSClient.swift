@@ -27,7 +27,7 @@ internal final class TLSClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let queue = DispatchQueue(label: "io.ecn.dnskit.tlsclient")
         let tlsOptions = NWProtocolTLS.Options()
         let parameters = NWParameters.init(tls: tlsOptions, tcp: NWProtocolTCP.Options())

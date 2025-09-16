@@ -172,7 +172,7 @@ public final class Query: Sendable {
     ///
     /// - Returns: The response message
     @available(iOS 13.0, macOS 10.15, *)
-    public func execute() async throws -> Message {
+    public func execute() async throws -> Response {
         return try await withCheckedThrowingContinuation { continuation in
             self.execute { result in
                 continuation.resume(with: result)
@@ -185,9 +185,9 @@ public final class Query: Sendable {
     /// DNSKit will attempt to connect to all addresses defined in  `serverAddresses` in parallel and return the result from the first successful connection
     ///
     /// - Parameter complete: A callback invoked with the response message or an error
-    public func execute(withCallback complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
+    public func execute(withCallback complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let group = DispatchGroup()
-        let results = AtomicArray<IndexWithMessage>(initialValue: [])
+        let results = AtomicArray<IndexWithResponse>(initialValue: [])
         let message = self.message()
 
         for i in 0..<self.clients.count {
@@ -197,7 +197,7 @@ public final class Query: Sendable {
             group.enter()
             dispatchQueue.async {
                 client.send(message: message) { result in
-                    results.Append(IndexWithMessage(index: i, result: result))
+                    results.Append(IndexWithResponse(index: i, result: result))
                     group.leave()
                 }
             }
@@ -319,9 +319,9 @@ public final class Query: Sendable {
     }
 }
 
-private struct IndexWithMessage {
+private struct IndexWithResponse {
     let index: Int
-    let result: Result<Message, DNSKitError>
+    let result: Result<Response, DNSKitError>
 }
 
 private struct IndexWithDNSSECResult {

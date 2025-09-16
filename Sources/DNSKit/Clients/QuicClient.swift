@@ -28,7 +28,7 @@ internal final class QuicClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let queue = DispatchQueue(label: "io.ecn.dnskit.quicclient")
         let options = NWProtocolQUIC.Options(alpn: ["doq"])
         let parameters = NWParameters.init(quic: options)

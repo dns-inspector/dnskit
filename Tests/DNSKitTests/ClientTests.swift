@@ -53,7 +53,8 @@ final class ClientTests {
 
     func testQuery() async throws {
         let query = Query(clients: [client], recordType: .A, name: "example.com")
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
         XCTAssertEqual(reply.answers[0].recordType, .A, "Answer must include an A record")
         XCTAssertNotNil(reply.answers[0].data as? ARecordData, "Answer must include data")
@@ -61,7 +62,8 @@ final class ClientTests {
     
     func testPTRQuery() async throws {
         let query = Query(clients: [client], recordType: .PTR, name: "8.8.4.4")
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
         XCTAssertEqual(reply.answers[0].recordType, .PTR, "Answer must include an PTR record")
         XCTAssertNotNil(reply.answers[0].data as? PTRRecordData, "Answer must include data")
@@ -71,13 +73,15 @@ final class ClientTests {
 
     func testQueryNXDOMAIN() async throws {
         let query = Query(clients: [client], recordType: .A, name: "if-you-register-this-domain-im-going-to-be-very-angry.com")
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         XCTAssertEqual(reply.responseCode, .NXDOMAIN, "Response code must be NXDOMAIN")
     }
 
     func testAuthenticateMessageA() async throws {
         let query = Query(clients: [client], recordType: .A, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
         XCTAssertTrue(result.signatureVerified, "Signature must be verified")
@@ -85,28 +89,32 @@ final class ClientTests {
 
     func testAuthenticateMessageSOA() async throws {
         let query = Query(clients: [client], recordType: .SOA, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
     func testAuthenticateRoot() async throws {
         let query = Query(clients: [client], recordType: .SOA, name: ".", queryOptions: QueryOptions(dnssecRequested: true))
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
     func testAuthenticateTLD() async throws {
         let query = Query(clients: [client], recordType: .SOA, name: "com.", queryOptions: QueryOptions(dnssecRequested: true))
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
     func testAuthenticateCNAME() async throws {
         let query = Query(clients: [client], recordType: .A, name: "example.dns-inspector.com", queryOptions: QueryOptions(dnssecRequested: true))
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
         XCTAssertTrue(result.signatureVerified, "Signature must be verified")
@@ -114,7 +122,8 @@ final class ClientTests {
 
     func testLocalControl() async throws {
         let query = Query(clients: [client], recordType: .A, name: "control.example.com")
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         XCTAssertTrue(reply.answers.count == 1)
         XCTAssertEqual(reply.answers[0].recordType, .A)
         XCTAssertNotNil(reply.answers[0].data as? ARecordData)
@@ -152,7 +161,8 @@ final class ClientTests {
 
     func testLocalAQueryInvalidAddress() async throws {
         let query = Query(clients: [client], recordType: .A, name: "invalid.ipv4.example.com")
-        let reply = try await query.execute()
+        let response = try await query.execute()
+        let reply = response.message
         XCTAssertTrue(reply.answers.count == 1)
         XCTAssertEqual(reply.answers[0].recordType, .A)
         XCTAssertNotNil(reply.answers[0].data as? ErrorRecordData)

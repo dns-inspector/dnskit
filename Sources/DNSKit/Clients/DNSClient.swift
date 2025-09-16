@@ -27,7 +27,7 @@ internal final class DNSClient: IClient, Sendable {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let timer = Timer.start()
 
         let messageData: Data
@@ -48,7 +48,7 @@ internal final class DNSClient: IClient, Sendable {
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
-            let completeRequest: @Sendable (Result<Message, DNSKitError>) -> Void = { result in
+            let completeRequest: @Sendable (Result<Response, DNSKitError>) -> Void = { result in
                 didComplete.If(false) {
                     complete(result)
                     connection.cancel()
@@ -93,7 +93,7 @@ internal final class DNSClient: IClient, Sendable {
 
                         printDebug("[\(#fileID):\(#line)] Answer: \(firstData.hexEncodedString())")
 
-                        completeRequest(.success(message))
+                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress)))
                         return
                     }
 
@@ -144,7 +144,7 @@ internal final class DNSClient: IClient, Sendable {
 
                         printDebug("[\(#fileID):\(#line)] Answer: \(messageContent.hexEncodedString())")
 
-                        completeRequest(.success(message))
+                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress)))
                         return
                     }
                 }

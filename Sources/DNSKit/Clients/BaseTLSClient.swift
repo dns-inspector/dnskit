@@ -25,7 +25,7 @@ internal struct BaseTLSClient: Sendable {
     internal let parameters: NWParameters
     internal let timeout: DispatchTime
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let timer = Timer.start()
 
         let messageData: Data
@@ -86,7 +86,7 @@ internal struct BaseTLSClient: Sendable {
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
-            let completeRequest: @Sendable (Result<Message, DNSKitError>) -> Void = { result in
+            let completeRequest: @Sendable (Result<Response, DNSKitError>) -> Void = { result in
                 didComplete.If(false) {
                     complete(result)
                     connection.cancel()
@@ -163,7 +163,7 @@ internal struct BaseTLSClient: Sendable {
 
                         printDebug("[\(#fileID):\(#line)] Answer: \(messageContent.hexEncodedString())")
 
-                        completeRequest(.success(message))
+                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress)))
                         return
                     }
                 }

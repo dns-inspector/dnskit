@@ -104,8 +104,8 @@ internal struct DNSSECResourceCollector {
     internal static func getDNSSECResourcesForZone(_ zone: String, client: IClient) throws -> (Message, Message?) {
         let answersNeeded = zone == "." ? 1 : 2
         let answersGot = AtomicInt(initialValue: 0)
-        let dnskeyResult: AtomicOnce<Result<Message, DNSKitError>> = .init()
-        let dsResult: AtomicOnce<Result<Message, DNSKitError>> = .init()
+        let dnskeyResult: AtomicOnce<Result<Response, DNSKitError>> = .init()
+        let dsResult: AtomicOnce<Result<Response, DNSKitError>> = .init()
         let sync = DispatchSemaphore(value: 0)
 
         client.send(message: Message(question: Question(name: zone, recordType: .DNSKEY, recordClass: .IN), dnssecOK: true)) { result in
@@ -130,7 +130,7 @@ internal struct DNSSECResourceCollector {
             printError("[\(#fileID):\(#line)] DNSSEC resource queries timed out. Needed \(answersNeeded) answers, only got \(answersGot.Get())")
             throw DNSSECError.missingKeys("One or more DNSKEY or DS records or their associated signatures were not found")
         }
-        guard let dnskey = try? dnskeyResult.Get()?.get() else {
+        guard let dnskey = try? dnskeyResult.Get()?.get().message else {
             printError("[\(#fileID):\(#line)] No DNSKEY answer found for \(zone)")
             throw DNSSECError.missingKeys("One or more DNSKEY or DS records or their associated signatures were not found")
         }
@@ -140,7 +140,7 @@ internal struct DNSSECResourceCollector {
                 printError("[\(#fileID):\(#line)] No DS answer found for \(zone)")
                 throw DNSSECError.missingKeys("One or more DNSKEY or DS records or their associated signatures were not found")
             }
-            ds = r
+            ds = r.message
         }
         return (dnskey, ds)
     }

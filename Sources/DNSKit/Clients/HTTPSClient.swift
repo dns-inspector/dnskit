@@ -59,7 +59,7 @@ internal final class HTTPClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
+    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let timer = Timer.start()
 
         let questionData: Data
@@ -156,7 +156,7 @@ internal final class HTTPClient: IClient {
 
         let connection = NWConnection(to: endpoint, using: parameters)
 
-        let completeRequest: @Sendable (Result<Message, DNSKitError>) -> Void = { result in
+        let completeRequest: @Sendable (Result<Response, DNSKitError>) -> Void = { result in
             didComplete.If(false) {
                 complete(result)
                 connection.cancel()
@@ -244,7 +244,7 @@ internal final class HTTPClient: IClient {
                 do {
                     message = try Message(messageData: body, elapsed: timer.stop())
                     printDebug("[\(#fileID):\(#line)] Answer \(body.hexEncodedString())")
-                    completeRequest(.success(message))
+                    completeRequest(.success(Response(message: message, serverAddress: url.absoluteString)))
                 } catch {
                     printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                     completeRequest(.failure(.invalidData(error.localizedDescription)))

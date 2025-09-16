@@ -28,7 +28,7 @@ internal protocol IClient: Sendable {
     /// - Parameters:
     ///   - message: The message to send
     ///   - complete: Callback called when complete, with either the response message or an error
-    func send(message: Message, complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void)
+    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void)
 
     /// Authenticate the given DNS message
     /// - Parameters:
