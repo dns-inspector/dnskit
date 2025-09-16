@@ -70,13 +70,13 @@ public struct QueryOptions: Sendable {
 }
 
 /// Describes a DNS query
-public struct Query: Sendable {
+public final class Query: Sendable {
     /// The transport type to use for sending the query
     public let transportType: TransportType
     /// Options for the transport type
     public let transportOptions: TransportOptions
     /// The DNS server address or URL (for DNS over HTTPS)
-    public let serverAddress: String
+    public let serverAddresses: [String]
     /// The requested record type
     public let recordType: RecordType
     /// The requested record name
@@ -84,60 +84,78 @@ public struct Query: Sendable {
     /// Options for the DNS query
     public let queryOptions: QueryOptions
 
-    internal let client: IClient
+    internal let clients: [IClient]
     internal let idNumber: UInt16
-    internal let dispatchQueue: DispatchQueue
+    internal let dispatchQueues: [DispatchQueue]
+    nonisolated(unsafe) private var reuseClient: IClient?
 
     /// Create a new DNS query.
     /// - Parameters:
     ///   - transportType: The transport type to use for connecting to the DNS server.
     ///   - transportOptions: Optional set of options for configuring the transport of the DNS query. Default values are used if this is nil.
-    ///   - serverAddress: The DNS server address.
+    ///   - serverAddresses: One or more addresses or URLs to DNS resolvers (servers). Maximum of 10.
     ///   - recordType: The requested record type.
     ///   - name: The name of the requested resource.
     ///   - queryOptions: Optional set of options for configuring the query. Default values are used if this is nil.
-    /// - Supported values for the `serverAddress` parameter depends on the value of the `transportType` parameter.
+    /// - Supported values for the `serverAddresses` parameter depends on the value of the `transportType` parameter.
     ///
     ///   If ``TransportType/DNS`` or ``TransportType/TLS`` is used, then an IP address and optional port _should_ be used. If an IPv6 address is being used with a port, the address must be wrapped in square brackets.
     ///
     ///   If ``TransportType/HTTPS`` is used, then a valid HTTPS URL must be provided. If no protocol is defined, HTTPS is automatically added. Other protocols, such as HTTP, are not supported and will throw an error.
     /// - Throws: Will throw if an invalid server address is provided. Use ``validateConfiguration(transportType:serverAddress:)`` to test server configuration.
-    public init(transportType: TransportType, transportOptions: TransportOptions = TransportOptions(), serverAddress: String, recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) throws {
+    public init(transportType: TransportType, transportOptions: TransportOptions = TransportOptions(), serverAddresses: [String], recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) throws {
+        if serverAddresses.count > 10 {
+            throw DNSKitError.invalidData("Too many server addresses provided. Maximum is 10, was given \(serverAddresses.count).")
+        }
+
         self.transportType = transportType
         self.transportOptions = transportOptions
-        self.serverAddress = serverAddress
+        self.serverAddresses = serverAddresses
         self.recordType = recordType
         self.name = name
         self.queryOptions = queryOptions
         self.idNumber = UInt16.random(in: 0...65535)
-        self.dispatchQueue = DispatchQueue(label: "io.ecn.dnskit.dnsquery", qos: .userInitiated)
 
-        switch transportType {
-        case .DNS:
-            self.client = try DNSClient(address: serverAddress, transportOptions: transportOptions)
-        case .TLS:
-            self.client = try TLSClient(address: serverAddress, transportOptions: transportOptions)
-        case .HTTPS:
-            self.client = try HTTPClient(address: serverAddress, transportOptions: transportOptions)
-        case .QUIC:
-            if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
-                self.client = try QuicClient(address: serverAddress, transportOptions: transportOptions)
-            } else {
-                fatalError("Attempted to use quic on unsupported target")
+        var dispatchQueues: [DispatchQueue] = []
+        var clients: [IClient] = []
+
+        for i in 0..<serverAddresses.count {
+            let serverAddress = serverAddresses[i]
+            dispatchQueues.append(DispatchQueue(label: "io.ecn.dnskit.dnsquery.\(i)", qos: .userInitiated))
+            switch transportType {
+            case .DNS:
+                clients.append(try DNSClient(address: serverAddress, transportOptions: transportOptions))
+            case .TLS:
+                clients.append(try TLSClient(address: serverAddress, transportOptions: transportOptions))
+            case .HTTPS:
+                clients.append(try HTTPClient(address: serverAddress, transportOptions: transportOptions))
+            case .QUIC:
+                if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+                    clients.append(try QuicClient(address: serverAddress, transportOptions: transportOptions))
+                } else {
+                    fatalError("Attempted to use quic on unsupported target")
+                }
             }
         }
+
+        self.clients = clients
+        self.dispatchQueues = dispatchQueues
     }
 
-    internal init(client: IClient, recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) {
-        self.client = client
+    internal init(clients: [IClient], recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) {
+        self.clients = clients
         self.recordType = recordType
         self.name = name
         self.queryOptions = queryOptions
         self.transportType = .DNS
         self.transportOptions = TransportOptions()
-        self.serverAddress = ""
         self.idNumber = UInt16.random(in: 0...65535)
-        self.dispatchQueue = DispatchQueue(label: "io.ecn.dnskit.dnsquery", qos: .userInitiated)
+        var dispatchQueues: [DispatchQueue] = []
+        for i in 0..<clients.count {
+            dispatchQueues.append(DispatchQueue(label: "io.ecn.dnskit.dnsquery.\(i)", qos: .userInitiated))
+        }
+        self.dispatchQueues = dispatchQueues
+        self.serverAddresses = []
     }
 
     /// Encodes this query into a DNS message
@@ -148,7 +166,10 @@ public struct Query: Sendable {
         return message
     }
 
-    /// Execute this DNS query and return the response message
+    /// Execute this DNS query and return the response message.
+    ///
+    /// DNSKit will attempt to connect to all addresses defined in  `serverAddresses` in parallel and return the result from the first successful connection
+    ///
     /// - Returns: The response message
     @available(iOS 13.0, macOS 10.15, *)
     public func execute() async throws -> Message {
@@ -160,11 +181,48 @@ public struct Query: Sendable {
     }
 
     /// Execute this DNS query
+    ///
+    /// DNSKit will attempt to connect to all addresses defined in  `serverAddresses` in parallel and return the result from the first successful connection
+    ///
     /// - Parameter complete: A callback invoked with the response message or an error
     public func execute(withCallback complete: @Sendable @escaping (Result<Message, DNSKitError>) -> Void) {
-        self.dispatchQueue.async {
-            self.client.send(message: self.message(), complete: complete)
+        let group = DispatchGroup()
+        let results = AtomicArray<IndexWithMessage>(initialValue: [])
+        let message = self.message()
+
+        for i in 0..<self.clients.count {
+            let client = self.clients[i]
+            let dispatchQueue = self.dispatchQueues[i]
+
+            group.enter()
+            dispatchQueue.async {
+                client.send(message: message) { result in
+                    results.Append(IndexWithMessage(index: i, result: result))
+                    group.leave()
+                }
+            }
         }
+
+        group.wait()
+
+        if results.Count() == 0 {
+            // This shouldn't happen but will cause a crash if it does
+            complete(.failure(DNSKitError.timedOut))
+            return
+        }
+
+        // Try to find the first successful result
+        for object in results.Get() {
+            if case .success = object.result {
+                complete(object.result)
+                // Save this client for future use
+                self.reuseClient = self.clients[object.index]
+                return
+            }
+        }
+
+        // Otherwise just return the first result since none were successful
+        complete(results.Get(0).result)
     }
 
     /// Validate the given server options
@@ -216,6 +274,57 @@ public struct Query: Sendable {
     ///   - complete: Callback called when complete with the result of the authentication
     /// This method will perform multiple queries in relation to the number of zones within the name.
     public func authenticate(message: Message, complete: @Sendable @escaping (Result<DNSSECResult, Error>) -> Void) {
-        self.client.authenticate(message: message, complete: complete)
+        // If this query instance had already successfully connected to a server, we can re-use that server for authentication to save time
+        if let client = self.reuseClient {
+            client.authenticate(message: message, complete: complete)
+            return
+        }
+
+        let group = DispatchGroup()
+        let results = AtomicArray<IndexWithDNSSECResult>(initialValue: [])
+
+        for i in 0..<self.clients.count {
+            let client = self.clients[i]
+            let dispatchQueue = self.dispatchQueues[i]
+
+            group.enter()
+            dispatchQueue.async {
+                client.authenticate(message: message) { result in
+                    results.Append(IndexWithDNSSECResult(index: i, result: result))
+                    group.leave()
+                }
+            }
+        }
+
+        group.wait()
+
+        if results.Count() == 0 {
+            // This shouldn't happen but will cause a crash if it does
+            complete(.failure(DNSKitError.timedOut))
+            return
+        }
+
+        // Try to find the first successful result
+        for object in results.Get() {
+            if case .success = object.result {
+                complete(object.result)
+                // Save this client for future use
+                self.reuseClient = self.clients[object.index]
+                return
+            }
+        }
+
+        // Otherwise just return the first result since none were successful
+        complete(results.Get(0).result)
     }
+}
+
+fileprivate struct IndexWithMessage {
+    let index: Int
+    let result: Result<Message, DNSKitError>
+}
+
+fileprivate struct IndexWithDNSSECResult {
+    let index: Int
+    let result: Result<DNSSECResult, any Error>
 }

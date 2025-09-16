@@ -52,7 +52,7 @@ final class ClientTests {
     }
 
     func testQuery() async throws {
-        let query = Query(client: client, recordType: .A, name: "example.com")
+        let query = Query(clients: [client], recordType: .A, name: "example.com")
         let reply = try await query.execute()
         XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
         XCTAssertEqual(reply.answers[0].recordType, .A, "Answer must include an A record")
@@ -60,7 +60,7 @@ final class ClientTests {
     }
     
     func testPTRQuery() async throws {
-        let query = Query(client: client, recordType: .PTR, name: "8.8.4.4")
+        let query = Query(clients: [client], recordType: .PTR, name: "8.8.4.4")
         let reply = try await query.execute()
         XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
         XCTAssertEqual(reply.answers[0].recordType, .PTR, "Answer must include an PTR record")
@@ -70,13 +70,13 @@ final class ClientTests {
     }
 
     func testQueryNXDOMAIN() async throws {
-        let query = Query(client: client, recordType: .A, name: "if-you-register-this-domain-im-going-to-be-very-angry.com")
+        let query = Query(clients: [client], recordType: .A, name: "if-you-register-this-domain-im-going-to-be-very-angry.com")
         let reply = try await query.execute()
         XCTAssertEqual(reply.responseCode, .NXDOMAIN, "Response code must be NXDOMAIN")
     }
 
     func testAuthenticateMessageA() async throws {
-        let query = Query(client: client, recordType: .A, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
+        let query = Query(clients: [client], recordType: .A, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
@@ -84,28 +84,28 @@ final class ClientTests {
     }
 
     func testAuthenticateMessageSOA() async throws {
-        let query = Query(client: client, recordType: .SOA, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
+        let query = Query(clients: [client], recordType: .SOA, name: "example.com", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
     func testAuthenticateRoot() async throws {
-        let query = Query(client: client, recordType: .SOA, name: ".", queryOptions: QueryOptions(dnssecRequested: true))
+        let query = Query(clients: [client], recordType: .SOA, name: ".", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
     func testAuthenticateTLD() async throws {
-        let query = Query(client: client, recordType: .SOA, name: "com.", queryOptions: QueryOptions(dnssecRequested: true))
+        let query = Query(clients: [client], recordType: .SOA, name: "com.", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
     }
 
     func testAuthenticateCNAME() async throws {
-        let query = Query(client: client, recordType: .A, name: "example.dns-inspector.com", queryOptions: QueryOptions(dnssecRequested: true))
+        let query = Query(clients: [client], recordType: .A, name: "example.dns-inspector.com", queryOptions: QueryOptions(dnssecRequested: true))
         let reply = try await query.execute()
         let result = try await query.authenticate(message: reply)
         XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
@@ -113,7 +113,7 @@ final class ClientTests {
     }
 
     func testLocalControl() async throws {
-        let query = Query(client: client, recordType: .A, name: "control.example.com")
+        let query = Query(clients: [client], recordType: .A, name: "control.example.com")
         let reply = try await query.execute()
         XCTAssertTrue(reply.answers.count == 1)
         XCTAssertEqual(reply.answers[0].recordType, .A)
@@ -121,7 +121,7 @@ final class ClientTests {
     }
 
     func testLocalRandomData() async throws {
-        let query = Query(client: client, recordType: .A, name: "random.example.com")
+        let query = Query(clients: [client], recordType: .A, name: "random.example.com")
         do {
             _ = try await query.execute()
             XCTFail("No failure seen for random data")
@@ -131,7 +131,7 @@ final class ClientTests {
     }
 
     func testLocalLengthOver() async throws {
-        let query = Query(client: client, recordType: .A, name: "length.over.example.com")
+        let query = Query(clients: [client], recordType: .A, name: "length.over.example.com")
         do {
             _ = try await query.execute()
             XCTFail("No failure seen for random data")
@@ -141,7 +141,7 @@ final class ClientTests {
     }
 
     func testLocalLengthUnder() async throws {
-        let query = Query(client: client, recordType: .A, name: "length.under.example.com")
+        let query = Query(clients: [client], recordType: .A, name: "length.under.example.com")
         do {
             _ = try await query.execute()
             XCTFail("No failure seen for random data")
@@ -151,7 +151,7 @@ final class ClientTests {
     }
 
     func testLocalAQueryInvalidAddress() async throws {
-        let query = Query(client: client, recordType: .A, name: "invalid.ipv4.example.com")
+        let query = Query(clients: [client], recordType: .A, name: "invalid.ipv4.example.com")
         let reply = try await query.execute()
         XCTAssertTrue(reply.answers.count == 1)
         XCTAssertEqual(reply.answers[0].recordType, .A)

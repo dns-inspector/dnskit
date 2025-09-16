@@ -71,7 +71,7 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     }
 
     func testBadContentType() async throws {
-        let query = try Query(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query", recordType: .A, name: "bad.content.type.example.com")
+        let query = try Query(transportType: .HTTPS, serverAddresses: ["https://localhost:8402/dns-query"], recordType: .A, name: "bad.content.type.example.com")
         do {
             _ = try await query.execute()
             XCTFail("No failure seen for bad content type")
@@ -81,7 +81,7 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     }
 
     func testNoContentType() async throws {
-        let query = try Query(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query", recordType: .A, name: "no.content.type.example.com")
+        let query = try Query(transportType: .HTTPS, serverAddresses: ["https://localhost:8402/dns-query"], recordType: .A, name: "no.content.type.example.com")
         do {
             _ = try await query.execute()
             XCTFail("No failure seen for no content type")
