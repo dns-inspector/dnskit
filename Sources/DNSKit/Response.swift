@@ -22,9 +22,4 @@ public struct Response: Sendable {
     public let message: Message
     /// The server that produced this reply
     public let serverAddress: String
-
-    internal init(message: Message, serverAddress: String) {
-        self.message = message
-        self.serverAddress = serverAddress
-    }
 }
