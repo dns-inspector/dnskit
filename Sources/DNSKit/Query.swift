@@ -237,21 +237,30 @@ public final class Query: Sendable {
     /// - Parameters:
     ///   - transportType: The transport type to use for connecting to the DNS server.
     ///   - serverAddress: The DNS server address. See <doc:init(transportType:transportOptions:serverAddress:recordType:name:queryOptions:)> for details on supported values.
+    ///   - bootstrapIps:  Optional IP addresses to connect to for DNS over HTTP transport types.
     /// - Returns: An error or nil if valid
-    public static func validateConfiguration(transportType: TransportType, serverAddress: String) -> Error? {
+    public static func validateConfiguration(transportType: TransportType, serverAddresses: [String], bootstrapIps: [String]? = nil) -> Error? {
         do {
-            switch transportType {
-            case .DNS:
-                _ = try DNSClient(address: serverAddress, transportOptions: TransportOptions())
-            case .TLS:
-                _ = try TLSClient(address: serverAddress, transportOptions: TransportOptions())
-            case .HTTPS:
-                _ = try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: TransportOptions())
-            case .QUIC:
-                if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
-                    _ = try QuicClient(address: serverAddress, transportOptions: TransportOptions())
-                } else {
-                    fatalError("Attempted to use quic on unsupported target")
+            for serverAddress in serverAddresses {
+                switch transportType {
+                case .DNS:
+                    _ = try DNSClient(address: serverAddress, transportOptions: TransportOptions())
+                case .TLS:
+                    _ = try TLSClient(address: serverAddress, transportOptions: TransportOptions())
+                case .HTTPS:
+                    if let bootstrapIps = bootstrapIps {
+                        for bootstrapIp in bootstrapIps {
+                            _ = try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: TransportOptions())
+                        }
+                    } else {
+                        _ = try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: TransportOptions())
+                    }
+                case .QUIC:
+                    if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+                        _ = try QuicClient(address: serverAddress, transportOptions: TransportOptions())
+                    } else {
+                        fatalError("Attempted to use quic on unsupported target")
+                    }
                 }
             }
             return nil

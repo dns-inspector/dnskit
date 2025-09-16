@@ -19,26 +19,28 @@ import XCTest
 
 final class QueryTests: XCTestCase {
     func testValidateDNSClientConfigurationValidDNS() throws {
-        XCTAssertNil(Query.validateConfiguration(transportType: .DNS, serverAddress: "8.8.8.8"))
+        XCTAssertNil(Query.validateConfiguration(transportType: .DNS, serverAddresses: ["8.8.8.8"]))
     }
 
     func testValidateDNSClientConfigurationValidDOT() throws {
-        XCTAssertNil(Query.validateConfiguration(transportType: .TLS, serverAddress: "8.8.8.8:853"))
+        XCTAssertNil(Query.validateConfiguration(transportType: .TLS, serverAddresses: ["8.8.8.8:853"]))
     }
 
     func testValidateDNSClientConfigurationValidDOH() throws {
-        XCTAssertNil(Query.validateConfiguration(transportType: .HTTPS, serverAddress: "https://dns.google/dns-query"))
+        XCTAssertNil(Query.validateConfiguration(transportType: .HTTPS, serverAddresses: ["https://dns.google/dns-query"]))
+        XCTAssertNil(Query.validateConfiguration(transportType: .HTTPS, serverAddresses: ["https://dns.google/dns-query"], bootstrapIps: ["8.8.8.8:443"]))
     }
 
     func testValidateDNSClientConfigurationInvalidDNS() throws {
-        XCTAssertNotNil(Query.validateConfiguration(transportType: .DNS, serverAddress: "8.8.8.8.8"))
+        XCTAssertNotNil(Query.validateConfiguration(transportType: .DNS, serverAddresses: ["8.8.8.8.8"]))
     }
 
     func testValidateDNSClientConfigurationInvalidDOT() throws {
-        XCTAssertNotNil(Query.validateConfiguration(transportType: .TLS, serverAddress: "8.8.8.8:65536"))
+        XCTAssertNotNil(Query.validateConfiguration(transportType: .TLS, serverAddresses: ["8.8.8.8:65536"]))
     }
 
     func testValidateDNSClientConfigurationInvalidDOH() throws {
-        XCTAssertNotNil(Query.validateConfiguration(transportType: .HTTPS, serverAddress: "http://dns.google/dns-query"))
+        XCTAssertNotNil(Query.validateConfiguration(transportType: .HTTPS, serverAddresses: ["http://dns.google/dns-query"]))
+        XCTAssertNotNil(Query.validateConfiguration(transportType: .HTTPS, serverAddresses: ["https://dns.google/dns-query"], bootstrapIps: ["8.8.8.8:65536"]))
     }
 }
