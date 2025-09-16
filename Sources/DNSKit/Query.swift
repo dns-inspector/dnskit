@@ -246,7 +246,7 @@ public final class Query: Sendable {
             case .TLS:
                 _ = try TLSClient(address: serverAddress, transportOptions: TransportOptions())
             case .HTTPS:
-                _ = try HTTPClient(address: serverAddress, transportOptions: TransportOptions())
+                _ = try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: TransportOptions())
             case .QUIC:
                 if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
                     _ = try QuicClient(address: serverAddress, transportOptions: TransportOptions())
