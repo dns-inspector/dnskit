@@ -319,12 +319,12 @@ public final class Query: Sendable {
     }
 }
 
-fileprivate struct IndexWithMessage {
+private struct IndexWithMessage {
     let index: Int
     let result: Result<Message, DNSKitError>
 }
 
-fileprivate struct IndexWithDNSSECResult {
+private struct IndexWithDNSSECResult {
     let index: Int
     let result: Result<DNSSECResult, any Error>
 }
