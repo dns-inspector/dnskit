@@ -69,7 +69,9 @@ public struct QueryOptions: Sendable {
     }
 }
 
-/// Describes a DNS query
+/// A class for performing a DNS query.
+///
+/// This is considered the "entrypoint" of DNSKit.
 public final class Query: Sendable {
     /// The transport type to use for sending the query
     public let transportType: TransportType
@@ -86,7 +88,6 @@ public final class Query: Sendable {
 
     internal let clients: [IClient]
     internal let idNumber: UInt16
-    internal let dispatchQueues: [DispatchQueue]
     nonisolated(unsafe) private var reuseClient: IClient?
 
     /// Create a new DNS query.
@@ -102,7 +103,7 @@ public final class Query: Sendable {
     ///   If ``TransportType/DNS`` or ``TransportType/TLS`` is used, then an IP address and optional port _should_ be used. If an IPv6 address is being used with a port, the address must be wrapped in square brackets.
     ///
     ///   If ``TransportType/HTTPS`` is used, then a valid HTTPS URL must be provided. If no protocol is defined, HTTPS is automatically added. Other protocols, such as HTTP, are not supported and will throw an error.
-    /// - Throws: Will throw if an invalid server address is provided. Use ``validateConfiguration(transportType:serverAddress:)`` to test server configuration.
+    /// - Throws: Will throw if an invalid server address is provided. Use ``validateConfiguration(transportType:serverAddresses:bootstrapIps:)`` to test server configuration.
     public init(transportType: TransportType, transportOptions: TransportOptions = TransportOptions(), serverAddresses: [String], recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) throws {
         if serverAddresses.count > 10 {
             throw DNSKitError.invalidData("Too many server addresses provided. Maximum is 10, was given \(serverAddresses.count).")
@@ -116,12 +117,10 @@ public final class Query: Sendable {
         self.queryOptions = queryOptions
         self.idNumber = UInt16.random(in: 0...65535)
 
-        var dispatchQueues: [DispatchQueue] = []
         var clients: [IClient] = []
 
         for i in 0..<serverAddresses.count {
             let serverAddress = serverAddresses[i]
-            dispatchQueues.append(DispatchQueue(label: "io.ecn.dnskit.dnsquery.\(i)", qos: .userInitiated))
             switch transportType {
             case .DNS:
                 clients.append(try DNSClient(address: serverAddress, transportOptions: transportOptions))
@@ -145,7 +144,6 @@ public final class Query: Sendable {
         }
 
         self.clients = clients
-        self.dispatchQueues = dispatchQueues
     }
 
     internal init(clients: [IClient], recordType: RecordType, name: String, queryOptions: QueryOptions = QueryOptions()) {
@@ -156,11 +154,6 @@ public final class Query: Sendable {
         self.transportType = .DNS
         self.transportOptions = TransportOptions()
         self.idNumber = UInt16.random(in: 0...65535)
-        var dispatchQueues: [DispatchQueue] = []
-        for i in 0..<clients.count {
-            dispatchQueues.append(DispatchQueue(label: "io.ecn.dnskit.dnsquery.\(i)", qos: .userInitiated))
-        }
-        self.dispatchQueues = dispatchQueues
         self.serverAddresses = []
     }
 
@@ -192,6 +185,7 @@ public final class Query: Sendable {
     ///
     /// - Parameter complete: A callback invoked with the response message or an error
     public func execute(withCallback complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
+        var dispatchQueues: [DispatchQueue] = []
         let group = DispatchGroup()
         let results = AtomicArray<IndexWithResponse>(initialValue: [])
         let didComplete = AtomicBool(initialValue: false)
@@ -199,7 +193,8 @@ public final class Query: Sendable {
 
         for i in 0..<self.clients.count {
             let client = self.clients[i]
-            let dispatchQueue = self.dispatchQueues[i]
+            let dispatchQueue = DispatchQueue(label: "io.ecn.dnskit.dnsquery.\(i)", qos: .userInitiated)
+            dispatchQueues.append(dispatchQueue)
 
             group.enter()
             dispatchQueue.async {
@@ -235,9 +230,9 @@ public final class Query: Sendable {
 
     /// Validate the given server options
     /// - Parameters:
-    ///   - transportType: The transport type to use for connecting to the DNS server.
-    ///   - serverAddress: The DNS server address. See <doc:init(transportType:transportOptions:serverAddress:recordType:name:queryOptions:)> for details on supported values.
-    ///   - bootstrapIps:  Optional IP addresses to connect to for DNS over HTTP transport types.
+    ///   - transportType:   The transport type to use for connecting to the DNS server.
+    ///   - serverAddresses: One or more addresses of the DNS server. See <doc:init(transportType:transportOptions:serverAddresses:recordType:name:queryOptions:)> for details on supported values.
+    ///   - bootstrapIps:    Optional IP addresses to connect to for DNS over HTTP transport types.
     /// - Returns: An error or nil if valid
     public static func validateConfiguration(transportType: TransportType, serverAddresses: [String], bootstrapIps: [String]? = nil) -> Error? {
         do {
@@ -297,13 +292,15 @@ public final class Query: Sendable {
             return
         }
 
+        var dispatchQueues: [DispatchQueue] = []
         let group = DispatchGroup()
         let results = AtomicArray<IndexWithDNSSECResult>(initialValue: [])
         let didComplete = AtomicBool(initialValue: false)
 
         for i in 0..<self.clients.count {
             let client = self.clients[i]
-            let dispatchQueue = self.dispatchQueues[i]
+            let dispatchQueue = DispatchQueue(label: "io.ecn.dnskit.dnsquery.\(i)", qos: .userInitiated)
+            dispatchQueues.append(dispatchQueue)
 
             group.enter()
             dispatchQueue.async {

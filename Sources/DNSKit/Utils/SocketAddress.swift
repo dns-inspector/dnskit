@@ -104,7 +104,7 @@ internal final class SocketAddress: CustomStringConvertible, CustomDebugStringCo
             self.version = .v6
         } else {
             printError("[\(#fileID):\(#line)] Unrecognized IP address: \(addressString)")
-            throw DNSKitError.invalidData("Invalid port number")
+            throw DNSKitError.invalidData("Unknown IP address format")
         }
     }
 
