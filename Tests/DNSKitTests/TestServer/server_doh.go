@@ -39,6 +39,7 @@ func (s *tserverDNSOverHTTPS) Start(port uint16, ipv4 string, ipv6 string, serve
 		Certificates: []tls.Certificate{*chain},
 		RootCAs:      rootCAPool,
 		ServerName:   servername,
+		NextProtos:   []string{"h2", "http/1.1", "http/1.0"},
 	}
 	t4l, err := tls.Listen("tcp4", fmt.Sprintf("%s:%d", ipv4, port), tlsConfig)
 	if err != nil {
@@ -53,14 +54,19 @@ func (s *tserverDNSOverHTTPS) Start(port uint16, ipv4 string, ipv6 string, serve
 	wg.Add(1)
 	var httpError error
 
+	server := &http.Server{
+		Handler:  s,
+		ErrorLog: log.Default(),
+	}
+
 	go func() {
-		if err := http.Serve(t4l, s); err != nil {
+		if err := server.Serve(t4l); err != nil {
 			httpError = err
 		}
 		wg.Done()
 	}()
 	go func() {
-		if err := http.Serve(t6l, s); err != nil {
+		if err := server.Serve(t6l); err != nil {
 			httpError = err
 		}
 		wg.Done()
