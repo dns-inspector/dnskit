@@ -43,14 +43,22 @@ public struct TransportOptions: Sendable {
     ///
     /// When specified, the DNS over HTTPS client will try to connect to all addresses and avoid doing a DNS query for the host address
     /// if one is specified in the server URL.
+    ///
+    /// > Important: When specified, HTTP/1.1 is used and the value of ``useHttp2`` is ignored. This is a known limitation tracked in [this issue](https://github.com/dns-inspector/dnskit/issues/11).
     public var httpsBootstrapIps: [String]?
 
+    /// If HTTP/2.0 should be used with DNS over HTTPS queries.
+    ///
+    /// > Important: This option cannot be used in conjunction with ``httpsBootstrapIps``. This is a known limitation tracked in [this issue](https://github.com/dns-inspector/dnskit/issues/11).
+    public var useHttp2: Bool = true
+
     /// Create a new set of transport options. All variables are optional and will use their default values.
-    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIps: [String]? = nil) {
+    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIps: [String]? = nil, useHttp2: Bool = true) {
         self.dnsPrefersTcp = dnsPrefersTcp
         self.timeout = timeout
         self.userAgent = userAgent
         self.httpsBootstrapIps = httpsBootstrapIps
+        self.useHttp2 = useHttp2
     }
 
     internal var timeoutDispatchTime: DispatchTime {
@@ -71,7 +79,7 @@ public struct QueryOptions: Sendable {
 
 /// A class for performing a DNS query.
 ///
-/// This is considered the "entrypoint" of DNSKit.
+/// This is considered the "entrypoint" of DNSKit, where you define your DNS query, the DNS server to connect to, and to execute that query and get the response.
 public final class Query: Sendable {
     /// The transport type to use for sending the query
     public let transportType: TransportType

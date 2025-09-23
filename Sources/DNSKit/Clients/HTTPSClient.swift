@@ -63,9 +63,52 @@ internal final class HTTPClient: IClient {
         self.transportOptions = transportOptions
     }
 
-    func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
+    public func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
+        if transportOptions.httpsBootstrapIps != nil || !transportOptions.useHttp2 {
+            printDebug("[\(#fileID):\(#line)] HTTP2 not requested, using CFHTTPMessage")
+            let client = CFHTTPClient(url: self.url, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), endpoint: self.endpoint, timeout: self.transportOptions.timeoutDispatchTime)
+            client.send(message: message, complete: complete)
+        } else {
+            printDebug("[\(#fileID):\(#line)] HTTP2 requested, using URLSession")
+            let client = URLSessionClient(url: self.url, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), timeout: self.transportOptions.timeout)
+            client.send(message: message, complete: complete)
+        }
+    }
+
+    func authenticate(message: Message, complete: @escaping @Sendable (Result<DNSSECResult, Error>) -> Void) {
+        DispatchQueue(label: "io.ecn.dnskit.httpsclient.dnssec").async {
+            do {
+                let result = try DNSSECClient.authenticateMessage(message, client: self)
+                complete(.success(result))
+            } catch {
+                complete(.failure(error))
+            }
+        }
+    }
+
+    func defaultUserAgnet() -> String {
+        let bundleName = Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String ?? "unknown-bundle-name"
+        let bundleVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown-version"
+
+        return "\(bundleName)/\(bundleVersion) (github.com/dns-inspector/dnskit)"
+    }
+}
+
+private final class URLSessionClient {
+    public let url: URL
+    public let userAgent: String
+    public let timeout: UInt8
+
+    public init(url: URL, userAgent: String, timeout: UInt8) {
+        self.url = url
+        self.userAgent = userAgent
+        self.timeout = timeout
+    }
+
+    public func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         let timer = Timer.start()
 
+        var urlString = self.url.absoluteString
         let questionData: Data
         do {
             questionData = try message.data(withZeroId: true) // RFC8484 4.1
@@ -74,16 +117,114 @@ internal final class HTTPClient: IClient {
             return
         }
 
-        printDebug("[\(#fileID):\(#line)] Question: \(questionData.hexEncodedString())")
-
-        var urlString = self.url.absoluteString
         if urlString.contains("?") {
             urlString += "&"
         } else {
             urlString += "?"
         }
         urlString += "dns=\(questionData.base64UrlEncodedValue())"
+        guard let url = URL(string: urlString) else {
+            complete(.failure(.invalidUrl))
+            return
+        }
 
+        var request = URLRequest(url: url)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue("application/dns-message", forHTTPHeaderField: "Accept")
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        sessionConfig.timeoutIntervalForResource = TimeInterval(self.timeout)
+        sessionConfig.httpCookieStorage = nil
+        sessionConfig.httpShouldSetCookies = false
+        let session = URLSession(configuration: sessionConfig)
+        printDebug("[\(#fileID):\(#line)] HTTP GET \(url)")
+        session.dataTask(with: request) { oData, oResponse, oError in
+            if let error = oError {
+                printError("[\(#fileID):\(#line)] Response error \(error)")
+                complete(.failure(.unexpectedResponse(error)))
+                return
+            }
+
+            guard let response = oResponse as? HTTPURLResponse else {
+                printError("[\(#fileID):\(#line)] Response error")
+                complete(.failure(.emptyResponse))
+                return
+            }
+
+            if response.statusCode != 200 {
+                printError("[\(#fileID):\(#line)] HTTP \(response.statusCode)")
+                complete(.failure(.httpError(response.statusCode)))
+                return
+            }
+
+            guard let contentType = response.allHeaderFields["Content-Type"] as? String else {
+                printError("[\(#fileID):\(#line)] No content type header")
+                complete(.failure(.invalidContentType("")))
+                return
+            }
+
+            if contentType.lowercased() != "application/dns-message" {
+                printError("[\(#fileID):\(#line)] Unsupported content type \(contentType)")
+                complete(.failure(.invalidContentType(contentType)))
+                return
+            }
+
+            guard let data = oData else {
+                printError("[\(#fileID):\(#line)] No data")
+                complete(.failure(.emptyResponse))
+                return
+            }
+
+            if data.count > 4096 {
+                printError("[\(#fileID):\(#line)] Excessive data size \(data.count)")
+                complete(.failure(.unexpectedResponse(DNSKitError.excessiveResponseSize)))
+                return
+            }
+
+            let message: Message
+            do {
+                message = try Message(messageData: data, elapsed: timer.stop())
+                printDebug("[\(#fileID):\(#line)] Answer \(data.hexEncodedString())")
+                complete(.success(Response(message: message, serverAddress: url.absoluteString)))
+            } catch {
+                printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
+                complete(.failure(.invalidData(error.localizedDescription)))
+            }
+        }.resume()
+    }
+}
+
+private final class CFHTTPClient {
+    public let url: URL
+    public let userAgent: String
+    public let endpoint: NWEndpoint
+    public let timeout: DispatchTime
+
+    public init(url: URL, userAgent: String, endpoint: NWEndpoint, timeout: DispatchTime) {
+        self.url = url
+        self.userAgent = userAgent
+        self.endpoint = endpoint
+        self.timeout = timeout
+    }
+
+    public func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
+        let timer = Timer.start()
+
+        var urlString = self.url.absoluteString
+        let questionData: Data
+        do {
+            questionData = try message.data(withZeroId: true) // RFC8484 4.1
+        } catch {
+            complete(.failure(.invalidData(error.localizedDescription)))
+            return
+        }
+
+        if urlString.contains("?") {
+            urlString += "&"
+        } else {
+            urlString += "?"
+        }
+        urlString += "dns=\(questionData.base64UrlEncodedValue())"
         guard let url = URL(string: urlString) else {
             complete(.failure(.invalidUrl))
             return
@@ -94,7 +235,6 @@ internal final class HTTPClient: IClient {
             CFHTTPMessageSetHeaderFieldValue(request, "Host" as CFString, host as CFString)
         }
 
-        let userAgent = transportOptions.userAgent ?? self.defaultUserAgnet()
         CFHTTPMessageSetHeaderFieldValue(request, "User-Agent" as CFString, userAgent as CFString)
         CFHTTPMessageSetHeaderFieldValue(request, "Accept" as CFString, "application/dns-message" as CFString)
 
@@ -203,25 +343,6 @@ internal final class HTTPClient: IClient {
                     printError("[\(#fileID):\(#line)] Unable to get headers from HTTP message")
                     return
                 }
-                let statusCode = CFHTTPMessageGetResponseStatusCode(responseMessage)
-
-                if statusCode != 200 {
-                    printError("[\(#fileID):\(#line)] HTTP \(statusCode)")
-                    completeRequest(.failure(.httpError(statusCode)))
-                    return
-                }
-
-                guard let contentType = headers["Content-Type"] else {
-                    printError("[\(#fileID):\(#line)] No content type header")
-                    completeRequest(.failure(.invalidContentType("")))
-                    return
-                }
-
-                if contentType.lowercased() != "application/dns-message" {
-                    printError("[\(#fileID):\(#line)] Unsupported content type \(contentType)")
-                    completeRequest(.failure(.invalidContentType(contentType)))
-                    return
-                }
 
                 guard let contentLengthStr = headers["Content-Length"], let contentLength = Int(contentLengthStr) else {
                     return
@@ -241,6 +362,25 @@ internal final class HTTPClient: IClient {
                 } else if body.count > 4096 {
                     printError("[\(#fileID):\(#line)] Excessive data size \(body.count)")
                     completeRequest(.failure(.unexpectedResponse(DNSKitError.excessiveResponseSize)))
+                    return
+                }
+
+                let statusCode = CFHTTPMessageGetResponseStatusCode(responseMessage)
+                if statusCode != 200 {
+                    printError("[\(#fileID):\(#line)] HTTP \(statusCode)")
+                    completeRequest(.failure(.httpError(statusCode)))
+                    return
+                }
+
+                guard let contentType = headers["Content-Type"] else {
+                    printError("[\(#fileID):\(#line)] No content type header")
+                    completeRequest(.failure(.invalidContentType("")))
+                    return
+                }
+
+                if contentType.lowercased() != "application/dns-message" {
+                    printError("[\(#fileID):\(#line)] Unsupported content type \(contentType)")
+                    completeRequest(.failure(.invalidContentType(contentType)))
                     return
                 }
 
@@ -285,30 +425,12 @@ internal final class HTTPClient: IClient {
         printDebug("[\(#fileID):\(#line)] Connecting to \(self.endpoint)")
         connection.start(queue: queue)
 
-        _ = semaphore.wait(timeout: self.transportOptions.timeoutDispatchTime)
+        _ = semaphore.wait(timeout: timeout)
         didComplete.If(false) {
             connection.cancel()
             printError("[\(#fileID):\(#line)] Connection timed out")
             complete(.failure(.timedOut))
             return true
         }
-    }
-
-    func authenticate(message: Message, complete: @escaping @Sendable (Result<DNSSECResult, Error>) -> Void) {
-        DispatchQueue(label: "io.ecn.dnskit.httpsclient.dnssec").async {
-            do {
-                let result = try DNSSECClient.authenticateMessage(message, client: self)
-                complete(.success(result))
-            } catch {
-                complete(.failure(error))
-            }
-        }
-    }
-
-    func defaultUserAgnet() -> String {
-        let bundleName = Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String ?? "unknown-bundle-name"
-        let bundleVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown-version"
-
-        return "\(bundleName)/\(bundleVersion) (github.com/dns-inspector/dnskit)"
     }
 }

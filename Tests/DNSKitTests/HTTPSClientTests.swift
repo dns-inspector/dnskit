@@ -43,11 +43,11 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
     }
 
     func testAuthenticateTLD() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateTLD()
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(useHttp2: true), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateTLD()
     }
 
     func testAuthenticateCNAME() async throws {
-        try await ClientTests(transportType: .HTTPS, serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateCNAME()
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(useHttp2: false), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateCNAME()
     }
 
     func testLocalControl() async throws {
