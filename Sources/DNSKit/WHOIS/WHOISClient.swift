@@ -64,13 +64,17 @@ public struct WHOISClient: Sendable {
             let replies = AtomicArray<WHOISReply>(initialValue: [])
             WHOISClient.lookup(bareDomain, server: server, depth: 1, replies: replies) { result in
                 didComplete.If(false) {
-                    complete(result)
+                    if replies.Count() > 0 {
+                        complete(.success(replies.Get()))
+                    } else {
+                        complete(result)
+                    }
                     return true
                 }
                 semaphore.signal()
             }
 
-            _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 5))
+            _ = semaphore.wait(timeout: DispatchTime.now().adding(seconds: 15))
             didComplete.If(false) {
                 printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): timed out")
                 complete(.failure(.timedOut))
@@ -88,10 +92,18 @@ public struct WHOISClient: Sendable {
 
         printDebug("[\(#fileID):\(#line)] Connecting to \(server):43...")
         let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host.name(server, nil), port: NWEndpoint.Port(rawValue: 43)!)
-        let connection = NWConnection(to: endpoint, using: NWParameters.init(tls: nil, tcp: NWProtocolTCP.Options()))
+        let tcpOptions = NWProtocolTCP.Options()
+        tcpOptions.connectionTimeout = 5
+        let connection = NWConnection(to: endpoint, using: NWParameters.init(tls: nil, tcp: tcpOptions))
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection \(String(describing: state))")
             switch state {
+            case .waiting(let error):
+                if error.localizedDescription.contains("timed out") {
+                    printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
+                    complete(.failure(.connectionError(error)))
+                    connection.cancel()
+                }
             case .failed(let error):
                 printError("[\(#fileID):\(#line)] Error sending WHOIS query to \(server): \(error)")
                 complete(.failure(.connectionError(error)))
@@ -122,15 +134,7 @@ public struct WHOISClient: Sendable {
                     replies.Append(reply)
 
                     // Check if there is a server we should follow to
-                    let nextServer = WHOISClient.findRedirectInResponse(response)
-
-                    guard let nextServer = nextServer else {
-                        complete(.success(replies.Get()))
-                        connection.cancel()
-                        return
-                    }
-
-                    if nextServer == "" {
+                    guard let nextServer = WHOISClient.findRedirectInResponse(response) else {
                         complete(.success(replies.Get()))
                         connection.cancel()
                         return
@@ -143,6 +147,7 @@ public struct WHOISClient: Sendable {
                     }
 
                     connection.cancel()
+                    printDebug("[\(#fileID):\(#line)] Following redirect to \(nextServer)")
                     WHOISClient.lookup(domain, server: nextServer, depth: depth+1, replies: replies, complete: complete)
                 }
                 connection.send(content: "\(domain)\r\n".data(using: .ascii), completion: NWConnection.SendCompletion.contentProcessed({ oError in
@@ -212,32 +217,30 @@ public struct WHOISClient: Sendable {
     }
 
     internal static func findRedirectInResponse(_ reply: NSString) -> String? {
-        guard let match = WHOISClient.registrarLinePattern.firstMatch(in: reply as String, range: NSRange(location: 0, length: reply.length)) else {
+        let matches = WHOISClient.registrarLinePattern.matches(in: reply as String, range: NSRange(location: 0, length: reply.length))
+        if matches.isEmpty {
             return nil
         }
 
-        let line = reply.substring(with: match.range)
-        let parts = String(line).split(separator: ":")
-        if parts.count != 2 {
-            printWarning("[\(#fileID):\(#line)] Unknown format of registrar WHOIS server line: \(line)")
+        for match in matches {
+            var followServer = (reply.substring(with: match.range) as NSString).substring(from: 23)
+
+            followServer = followServer.replacingOccurrences(of: " ", with: "")
+            followServer = followServer.replacingOccurrences(of: "\r", with: "")
+            followServer = followServer.replacingOccurrences(of: "\n", with: "")
+
+            if followServer.hasPrefix("https://") {
+                followServer = followServer.replacingOccurrences(of: "https://", with: "")
+            } else if followServer.hasPrefix("http://") {
+                followServer = followServer.replacingOccurrences(of: "http://", with: "")
+            }
+
+            if followServer == "" {
+                continue
+            }
+
+            return followServer
         }
-
-        var followServer = String(parts[1])
-        followServer = followServer.replacingOccurrences(of: " ", with: "")
-        followServer = followServer.replacingOccurrences(of: "\r", with: "")
-        followServer = followServer.replacingOccurrences(of: "\n", with: "")
-
-        if followServer.hasPrefix("https://") {
-            followServer = followServer.replacingOccurrences(of: "https://", with: "")
-        } else if followServer.hasPrefix("http://") {
-            followServer = followServer.replacingOccurrences(of: "http://", with: "")
-        }
-
-        if followServer == "" {
-            return nil
-        }
-
-        printDebug("[\(#fileID):\(#line)] Following redirect to \(followServer)")
-        return followServer
+        return nil
     }
 }

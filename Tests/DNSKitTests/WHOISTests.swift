@@ -29,6 +29,7 @@ final class WHOISTests: XCTestCase {
 
     func testGetLookupHostForDomain() {
         getLookupHostForDomain("example.com", expectedServer: "whois.verisign-grs.com", expectedBare: "example.com")
+        getLookupHostForDomain("wikipedia.org", expectedServer: "whois.pir.org", expectedBare: "wikipedia.org")
         getLookupHostForDomain("example.example.example.com", expectedServer: "whois.verisign-grs.com", expectedBare: "example.com")
         getLookupHostForDomain("example.cn.com", expectedServer: "whois.centralnic.net", expectedBare: "example.cn.com")
         getLookupHostForDomain("example.app", expectedServer: "whois.nic.app", expectedBare: "example.app")
