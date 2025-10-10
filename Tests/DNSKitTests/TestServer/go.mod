@@ -3,7 +3,7 @@ module dnskit-test-server
 go 1.24.5
 
 require (
-	github.com/quic-go/quic-go v0.53.0
+	github.com/quic-go/quic-go v0.54.1
 	golang.org/x/net v0.42.0
 )
 
