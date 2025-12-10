@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: "Checkout Source"
         id: checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #pin v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #pin v6.0.1
         with:
           persist-credentials: false
 
@@ -48,7 +48,7 @@ jobs:
 
       - name: "Restore Cached SwiftLint"
         id: restore_swiftlint
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 #pin v4.2.4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 #pin v4.3.0
         with:
           key: ${{ steps.prepare.outputs.SWIFTLINT_CACHE_KEY }}
           path: |
@@ -70,7 +70,7 @@ jobs:
 
       - name: "Install Go"
         id: install_go
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 #pin v6.0.0
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c #pin v6.1.0
         with:
           go-version: "stable"
           cache-dependency-path: Tests/DNSKitTests/TestServer/go.sum
@@ -110,7 +110,7 @@ jobs:
         run: |
           xcodebuild -scheme DNSKit -derivedDataPath /Users/runner/derived_data -destination 'platform=iOS Simulator,name=${{ env.TEST_DEVICE }}' test
 
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #pin v4.6.2
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 #pin v5.0.0
         if: failure()
         with:
           name: test-results
