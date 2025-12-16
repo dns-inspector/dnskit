@@ -108,7 +108,7 @@ internal struct DNSSECResourceCollector {
         let dsResult: AtomicOnce<Result<Response, DNSKitError>> = .init()
         let sync = DispatchSemaphore(value: 0)
 
-        client.send(message: Message(question: Question(name: zone, recordType: .DNSKEY, recordClass: .IN), dnssecOK: true)) { result in
+        client.send(message: Message(question: Question(name: zone, recordType: .DNSKEY), dnssecOK: true)) { result in
             dnskeyResult.Set(newValue: result)
             if answersGot.IncrementAndGet() == answersNeeded {
                 sync.signal()
@@ -117,7 +117,7 @@ internal struct DNSSECResourceCollector {
 
         // Root zone has no DS
         if zone != "." {
-            client.send(message: Message(question: Question(name: zone, recordType: .DS, recordClass: .IN), dnssecOK: true)) { result in
+            client.send(message: Message(question: Question(name: zone, recordType: .DS), dnssecOK: true)) { result in
                 dsResult.Set(newValue: result)
                 if answersGot.IncrementAndGet() == answersNeeded {
                     sync.signal()
@@ -143,5 +143,31 @@ internal struct DNSSECResourceCollector {
             ds = r.message
         }
         return (dnskey, ds)
+    }
+
+    internal static func systemGetAllDNSSECResources(zones: [String]) throws -> [String: (Message, Message?)] {
+        var returnValue: [String: (Message, Message?)] = [:]
+        for zone in zones {
+            printDebug("[\(#fileID):\(#line)] Getting DNSSEC resources for \(zone)")
+            do {
+                let (dnskey, ds) = try systemGetDNSSECResourcesForZone(zone)
+                returnValue[zone] = (dnskey, ds)
+            } catch {
+                printError("[\(#fileID):\(#line)] Unable to fetch DNSKEY resources for \(zone)")
+                throw DNSSECError.missingKeys("One or more DNSKEY or DS records or their associated signatures were not found")
+            }
+            printDebug("[\(#fileID):\(#line)] Got DNSSEC resources for \(zone)")
+        }
+
+        return returnValue
+    }
+
+    internal static func systemGetDNSSECResourcesForZone(_ zone: String) throws -> (Message, Message?) {
+        let dnsKey = try SystemResolver.query(question: Question(name: zone, recordType: .DNSKEY), dnssecOk: true)
+        if zone != "." {
+            let ds = try SystemResolver.query(question: Question(name: zone, recordType: .DS), dnssecOk: true)
+            return (dnsKey, ds)
+        }
+        return (dnsKey, nil)
     }
 }

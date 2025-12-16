@@ -25,7 +25,7 @@ public struct Question: Sendable {
     /// The resource's record class
     public let recordClass: RecordClass
 
-    public init(name: String, recordType: RecordType, recordClass: RecordClass) {
+    public init(name: String, recordType: RecordType, recordClass: RecordClass = .IN) {
         self.recordType = recordType
         self.recordClass = recordClass
 

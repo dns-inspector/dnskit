@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 
 // DNSKit
 // Copyright (C) Ian Spence and other DNSKit Contributors
@@ -36,15 +36,27 @@ let package = Package(
     targets: [
         .target(
             name: "DNSKit",
+            dependencies: ["Bsdresolv"],
             exclude: [
                 "WHOIS/update_whois.py"
+            ],
+            linkerSettings: [
+                .linkedLibrary("resolv")
             ]
+        ),
+        .systemLibrary(
+            name: "Bsdresolv",
+            pkgConfig: nil,
+            providers: nil
         ),
         .testTarget(
             name: "DNSKitTests",
             dependencies: ["DNSKit"],
             exclude: [
                 "TestServer/"
+            ],
+            linkerSettings: [
+                .linkedLibrary("resolv")
             ]
         )
     ]

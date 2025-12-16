@@ -8,6 +8,7 @@ DNSKit provides a wide array of support across the DNS ecosystem, including:
 
 - Native support for most common DNS record types.
 - Support for DNS over HTTPS, DNS over TLS, DNS over Quic, and traditional DNS using TCP or UDP.
+- Bridge for using the system resolver in Swift (libresolv bridge)
 - Full DNSSEC signature validation & chain trust establishment.
 - WHOIS client for domain information.
 

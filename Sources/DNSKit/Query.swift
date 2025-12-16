@@ -168,7 +168,7 @@ public final class Query: Sendable {
     /// Encodes this query into a DNS message
     /// - Returns: The DNS message
     public func message() -> Message {
-        let question = Question(name: self.name, recordType: self.recordType, recordClass: .IN)
+        let question = Question(name: self.name, recordType: self.recordType)
         let message = Message(idNumber: self.idNumber, question: question, dnssecOK: self.queryOptions.dnssecRequested)
         return message
     }

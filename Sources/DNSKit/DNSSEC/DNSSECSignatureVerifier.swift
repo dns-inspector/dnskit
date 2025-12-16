@@ -109,7 +109,7 @@ internal struct DNSSECSignatureVerifier {
             throw DNSSECError.badSigningKey("Mismatched algorithm from signature")
         }
         if rrsig.signerName.lowercased() != dnskeyAnswer.name.lowercased() {
-            printError("[\(#fileID):\(#line)] Mismatched signer name from signature")
+            printError("[\(#fileID):\(#line)] Mismatched signer name from signature. Expected '\(rrsig.signerName.lowercased())' to equal '\(dnskeyAnswer.name.lowercased())'")
             throw DNSSECError.badSigningKey("Mismatched signer name from signature")
         }
         if dnskey.keyProtocol != 3 {
