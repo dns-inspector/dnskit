@@ -104,6 +104,8 @@ internal struct DNSSECClient {
                 if dsSignature == nil {
                     throw DNSSECError.noSignatures("Missing signature for DS on \(zone)")
                 }
+            } else if zone != "." {
+                throw DNSSECError.noSignatures("Missing DS record on \(zone)")
             }
             result.resources.append(DNSSECResource(zone: zone, dnsKeys: dnskeys, keySignature: dnskeySignature, ds: ds, dsSignature: dsSignature))
         }

@@ -26,24 +26,26 @@ public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
     case CNAME = 5
     /// Start of authority record
     case SOA = 6
+    /// Pointer record
+    case PTR = 12
+    /// Mail exchange record
+    case MX = 15
+    /// Text record
+    case TXT = 16
     /// IPv6 Address record
     case AAAA = 28
     /// Location record
     case LOC = 29
     /// Service locator
     case SRV = 33
-    /// Text record
-    case TXT = 16
-    /// Mail exchange record
-    case MX = 15
-    /// Pointer record
-    case PTR = 12
     /// Delegation signer record
     case DS = 43
     /// Resource record signature record
     case RRSIG = 46
     /// DNS key record
     case DNSKEY = 48
+    /// NSEC3 record
+    case NSEC3 = 50
     /// HTTPS server information record
     case HTTPS = 65
 

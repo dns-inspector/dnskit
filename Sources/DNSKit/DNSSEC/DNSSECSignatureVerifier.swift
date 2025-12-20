@@ -177,7 +177,7 @@ internal struct DNSSECSignatureVerifier {
         let verified = SecKeyVerifySignature(publicKey, algorithm, signedData as CFData, signature as CFData, &verifyError)
 
         if verified {
-            printDebug("[\(#fileID):\(#line)] Signature validation passed for \(answers[0].name)")
+            printDebug("[\(#fileID):\(#line)] Signature validation passed for \(answers[0].recordType) \(answers[0].name)")
         } else {
             if log?.currentLevel() == .Debug {
                 printDebug("[\(#fileID):\(#line)] Public key: \(dnskey.publicKey.hexEncodedString())")

@@ -60,4 +60,9 @@ import Testing
         #expect(dnssecResult.chainTrusted)
         #expect(dnssecResult.signatureVerified)
     }
+
+    @Test func queryNXDOMAINDNSSEC() async throws {
+        let reply = try SystemResolver.query(question: Question(name: "not-exist.example.com", recordType: .A), dnssecOk: true)
+        #expect(reply.responseCode == .NXDOMAIN)
+    }
 }

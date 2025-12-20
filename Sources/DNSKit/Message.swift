@@ -38,6 +38,10 @@ public struct Message: Sendable {
     public let questions: [Question]
     /// Message answers
     public let answers: [Answer]
+    /// Authority answers
+    public let authority: [Answer]
+    /// Additional answers
+    public let additional: [Answer]
     /// If DNSSEC is ok
     public let dnssecOK: Bool
     /// The amount of time (in nanoseconds) it took to receive this message in response to our question
@@ -53,6 +57,8 @@ public struct Message: Sendable {
         self.responseCode = .NOERROR
         self.questions = [question]
         self.answers = []
+        self.authority = []
+        self.additional = []
         self.dnssecOK = dnssecOK
         self.duration = 0
     }
@@ -89,8 +95,14 @@ public struct Message: Sendable {
         let (questions, answerStartOffset) = try Message.readQuestions(messageData: messageData, expectedQuestionCount: header.questionCount)
         self.questions = questions
 
-        let (answers, _) = try Message.readAnswers(messageData: messageData, expectedAnswerCount: header.answerCount, startOffset: answerStartOffset)
+        let (answers, authorityStartOffset) = try Message.readAnswers(messageData: messageData, expectedAnswerCount: header.answerCount, startOffset: answerStartOffset)
         self.answers = answers
+
+        let (authority, additionalStartOffset) = try Message.readAnswers(messageData: messageData, expectedAnswerCount: header.nameserverCount, startOffset: authorityStartOffset)
+        self.authority = authority
+
+        let (additional, _) = try Message.readAnswers(messageData: messageData, expectedAnswerCount: header.additionalCount, startOffset: additionalStartOffset)
+        self.additional = additional
 
         self.dnssecOK = false
         self.duration = elapsed
@@ -144,6 +156,23 @@ public struct Message: Sendable {
                 let dl = data.loadUnaligned(fromByteOffset: offset, as: UInt16.self).bigEndian
                 return (ty, cl, tt, dl)
             }
+
+            let valueStartOffset = dataOffset+10
+            let value = messageData.subdata(in: valueStartOffset..<valueStartOffset+Int(dataLength))
+            if value.count != dataLength {
+                printError("[\(#fileID):\(#line)] Invalid DNS message: data length \(dataLength) must match record data size \(value.count)")
+                throw DNSKitError.invalidData("Invalid DNS message: data length must match record data size")
+            }
+            answerStartOffset = valueStartOffset+Int(dataLength)
+
+            let ignoredRecordTypes: [UInt16] = [
+                41
+            ]
+            if ignoredRecordTypes.firstIndex(of: recordTypeRaw) != nil {
+                printDebug("[\(#fileID):\(#line)] Ignoring record at index \(answersRead) with type \(recordTypeRaw)")
+                answersRead += 1
+                continue
+            }
             guard let recordType = RecordType(rawValue: recordTypeRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record type in answer at index \(answersRead): \(recordTypeRaw)")
                 throw DNSKitError.invalidData("Invalid DNS message: unknown record type")
@@ -156,14 +185,6 @@ public struct Message: Sendable {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: data length (\(dataLength)B) of answer at index \(answersRead) exceeds message size \(messageData.count)B")
                 throw DNSKitError.invalidData("Invalid DNS message: data length exceeds actual size")
             }
-
-            let valueStartOffset = dataOffset+10
-            let value = messageData.subdata(in: valueStartOffset..<valueStartOffset+Int(dataLength))
-            if value.count != dataLength {
-                printError("[\(#fileID):\(#line)] Invalid DNS message: data length \(dataLength) must match record data size \(value.count)")
-                throw DNSKitError.invalidData("Invalid DNS message: data length must match record data size")
-            }
-            answerStartOffset = valueStartOffset+Int(dataLength)
 
             var recordData: RecordData?
             do {
@@ -196,6 +217,8 @@ public struct Message: Sendable {
                     recordData = try DNSKEYRecordData(recordData: value)
                 case .HTTPS:
                     recordData = try HTTPSRecordData(recordData: value)
+                case .NSEC3:
+                    recordData = try NSEC3RecordData(messageData: messageData, startOffset: valueStartOffset)
                 }
             } catch {
                 printError("[\(#fileID):\(#line)] Error serlizing record data: \(error)")
