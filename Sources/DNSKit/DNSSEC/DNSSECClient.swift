@@ -75,7 +75,7 @@ internal struct DNSSECClient {
         }
 
         // Build a map of keyId to key, and zone to DS record
-        var keyMap: [UInt32: Answer] = [:]
+        var keyMap: [UInt32: [Answer]] = [:]
         for (zone, (dnskeyMessage, dsMessage)) in resources {
             var dnskeys: [Answer] = []
             var dnskeySignature: Answer?
@@ -83,7 +83,11 @@ internal struct DNSSECClient {
                 guard let data = answer.data as? DNSKEYRecordData else {
                     throw DNSSECError.invalidResponse("Incorrect data type in DNSKEY response for zone \(zone)")
                 }
-                keyMap[data.keyTag] = answer
+
+                var keys = keyMap[data.keyTag] ?? []
+                keys.append(answer)
+                keyMap[data.keyTag] = keys
+
                 dnskeys.append(answer)
             }
             for answer in dnskeyMessage.answers where answer.recordType == .RRSIG {

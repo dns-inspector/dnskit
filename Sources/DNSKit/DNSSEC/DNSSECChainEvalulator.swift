@@ -23,7 +23,7 @@ internal struct DNSSECChainEvalulator {
     ///   - zones: The zones to use. Should be the output from ``DNSSECResourceCollector.getAllZonesInAnswers``.
     ///   - Resources: The resources to reference
     ///   - keyMap: The key map to reference
-    internal static func evalulateChain(ofZones zones: [String], withResources resources: inout [String: (Message, Message?)], andKeyMap keyMap: inout [UInt32: Answer]) throws {
+    internal static func evalulateChain(ofZones zones: [String], withResources resources: inout [String: (Message, Message?)], andKeyMap keyMap: inout [UInt32: [Answer]]) throws {
         for startZone in zones {
             var parents = Name.parentNames(from: startZone)
             parents.removeLast() // remove the root zone at the end since it doesn't have a DS
@@ -44,43 +44,43 @@ internal struct DNSSECChainEvalulator {
                         printError("[\(#fileID):\(#line)] Missing required DS record \(zone)")
                         throw DNSSECError.noSignatures("Missing required DS record")
                     }
-                    guard let dnskey = keyMap[UInt32(ds.keyTag)]?.data as? DNSKEYRecordData else {
-                        // Some zones include multiple DS records, which may point to a DNSKEY that doesn't exist
-                        // By itself this doesn't mean the delegation is invalid, so long as there is at least one valid DS record for the zone
-                        printWarning("[\(#fileID):\(#line)] \(zone)'s DS record references non-existant DNSKEY")
-                        continue
-                    }
+                    for dnskeyRecord in keyMap[UInt32(ds.keyTag)] ?? [] {
+                        guard let dnskey = dnskeyRecord.data as? DNSKEYRecordData else {
+                            fatalError("Invalid record data for DNSKEY")
+                        }
 
-                    // Double check the zone signed the DS record as expected
-                    var zoneSigned = false
-                    for dnskeyAnswer in dnskeyMessage.answers where dnskeyAnswer.recordType == .DNSKEY {
-                        guard let data = dnskeyAnswer.data as? DNSKEYRecordData else {
+                        // Double check the zone signed the DS record as expected
+                        var zoneSigned = false
+                        for dnskeyAnswer in dnskeyMessage.answers where dnskeyAnswer.recordType == .DNSKEY {
+                            guard let data = dnskeyAnswer.data as? DNSKEYRecordData else {
+                                continue
+                            }
+
+                            if data.publicKey == dnskey.publicKey {
+                                zoneSigned = true
+                                break
+                            }
+                        }
+                        if !zoneSigned {
+                            printError("[\(#fileID):\(#line)] No DNSKEY record found to sign \(zone)'s DS record")
                             continue
                         }
 
-                        if data.publicKey == dnskey.publicKey {
-                            zoneSigned = true
-                            break
+                        let digest: Data
+                        do {
+                            digest = try dnskey.hashWithOwnerName(dsAnswer.name, digest: ds.digestType)
+                        } catch {
+                            printError("[\(#fileID):\(#line)] Unable to hash \(zone) name with DNSKEY \(ds.keyTag): \(error)")
+                            continue
                         }
-                    }
-                    if !zoneSigned {
-                        printError("[\(#fileID):\(#line)] No DNSKEY record found to sign \(zone)'s DS record")
-                        throw DNSSECError.missingKeys("No DNSKEY record found to sign \(zone)'s DS record")
-                    }
 
-                    let digest: Data
-                    do {
-                        digest = try dnskey.hashWithOwnerName(dsAnswer.name, digest: ds.digestType)
-                    } catch {
-                        printError("[\(#fileID):\(#line)] Unable to hash \(zone) name with DNSKEY: \(error)")
-                        throw error
+                        if digest != ds.digest {
+                            printError("[\(#fileID):\(#line)] No matching DNSKEY found from DS digest")
+                            continue
+                        }
+                        hasValidDs = true
+                        printDebug("[\(#fileID):\(#line)] DS for \(zone) is valid")
                     }
-
-                    if digest != ds.digest {
-                        printError("[\(#fileID):\(#line)] No matching DNSKEY found from DS digest")
-                        throw DNSSECError.missingKeys("Unknown DNSKEY referenced in DS record")
-                    }
-                    hasValidDs = true
                 }
                 if !hasValidDs {
                     throw DNSSECError.missingKeys("No DNSKEY record found to sign \(zone)'s DS record")

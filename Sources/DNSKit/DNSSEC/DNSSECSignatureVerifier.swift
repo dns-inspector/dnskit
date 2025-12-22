@@ -18,7 +18,7 @@ import Foundation
 
 /// Subnet of the DNSSEC Client for signature verification
 internal struct DNSSECSignatureVerifier {
-    internal static func verifySignatures(ofMessage message: Message, andResources resources: inout [String: (Message, Message?)], referencingKeyMap keyMap: inout [UInt32: Answer]) throws {
+    internal static func verifySignatures(ofMessage message: Message, andResources resources: inout [String: (Message, Message?)], referencingKeyMap keyMap: inout [UInt32: [Answer]]) throws {
         // Validate signatures of the records from the original message
         for zone in DNSSECResourceCollector.getAllZonesInAnswers(message.answers) {
             try verifyMessage(message, forZone: zone, referencingKeyMap: &keyMap)
@@ -34,7 +34,7 @@ internal struct DNSSECSignatureVerifier {
         }
     }
 
-    internal static func verifyMessage(_ message: Message, forZone zone: String, referencingKeyMap keyMap: inout [UInt32: Answer]) throws {
+    internal static func verifyMessage(_ message: Message, forZone zone: String, referencingKeyMap keyMap: inout [UInt32: [Answer]]) throws {
         var rrset: [Answer] = []
         var rrsig: Answer?
 
@@ -52,11 +52,22 @@ internal struct DNSSECSignatureVerifier {
         guard let rrsigData = rrsig.data as? RRSIGRecordData else {
             throw DNSSECError.invalidResponse("Incorrect data type in rrsig response for zone \(zone)")
         }
-        guard let dnskey = keyMap[UInt32(rrsigData.keyTag)] else {
-            throw DNSSECError.missingKeys("No matching key found to sign resource records belonging to \(zone)")
+
+        var verifyError: Error?
+        for dnskey in keyMap[UInt32(rrsigData.keyTag)] ?? [] {
+            do {
+                try verifyAnswers(rrset, signatureAnswer: rrsig, dnskeyAnswer: dnskey)
+                return
+            } catch {
+                printError("[\(#fileID):\(#line)] Unable to verify rrset with key \(rrsigData.keyTag): \(error)")
+                verifyError = error
+            }
         }
 
-        try verifyAnswers(rrset, signatureAnswer: rrsig, dnskeyAnswer: dnskey)
+        guard let verifyError = verifyError else {
+            throw DNSSECError.missingKeys("No matching key found to sign resource records belonging to \(zone)")
+        }
+        throw verifyError
     }
 
     /// Validate the set of DNS Answers against the signature and key
