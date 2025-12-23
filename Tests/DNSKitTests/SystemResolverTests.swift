@@ -64,5 +64,6 @@ import Testing
     @Test func queryNXDOMAINDNSSEC() async throws {
         let reply = try SystemResolver.query(question: Question(name: "if-you-register-this-domain-im-going-to-be-very-angry.com", recordType: .A), dnssecOk: true)
         #expect(reply.responseCode == .NXDOMAIN)
+        // TODO: finish this test once validation of NSEC/NSEC3 messages are passed
     }
 }

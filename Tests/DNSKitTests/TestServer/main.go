@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 )
@@ -134,8 +135,13 @@ func start(startPort uint16, ipv4 string, ipv6 string, servername string) {
 	port := startPort
 	for _, server := range servers {
 		go func(p uint16, s IServer) {
-			if err := s.Start(p, ipv4, ipv6, servername); err != nil {
-				panic(err)
+			for {
+				err := s.Start(p, ipv4, ipv6, servername)
+				if err != nil {
+					log.Printf("Server exited - restarting... %s", err.Error())
+					continue
+				}
+				break
 			}
 		}(port, server)
 		port++

@@ -90,7 +90,10 @@ public class Name {
 
                 if labelFlag < 64 {
                     // Label value, labelFlag is length
-                    if labelFlag >= buffer.count {
+                    if labelFlag >= buffer.count || offset+1+Int(labelFlag) >= buffer.count {
+                        throw DNSKitError.invalidData("Label length outside of data bounds")
+                    }
+                    if offset+Int(labelFlag) <= offset {
                         throw DNSKitError.invalidData("Label length outside of data bounds")
                     }
 
