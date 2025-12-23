@@ -44,8 +44,6 @@ public struct Message: Sendable {
     public let additional: [Answer]
     /// If DNSSEC is ok
     public let dnssecOK: Bool
-    /// The amount of time (in nanoseconds) it took to receive this message in response to our question
-    public let duration: UInt64
 
     internal init(idNumber: UInt16 = UInt16.random(), question: Question, dnssecOK: Bool) {
         self.idNumber = idNumber
@@ -60,10 +58,9 @@ public struct Message: Sendable {
         self.authority = []
         self.additional = []
         self.dnssecOK = dnssecOK
-        self.duration = 0
     }
 
-    internal init(messageData: Data, elapsed: UInt64 = 0) throws {
+    internal init(messageData: Data) throws {
         if messageData.count < 12 {
             printError("[\(#fileID):\(#line)] Invalid DNS message: too short \(messageData.count)B")
             throw DNSKitError.invalidData("Invalid DNS message: too short")
@@ -105,7 +102,6 @@ public struct Message: Sendable {
         self.additional = additional
 
         self.dnssecOK = false
-        self.duration = elapsed
     }
 
     internal static func readQuestions(messageData: Data, expectedQuestionCount: UInt16) throws -> ([Question], Int) {

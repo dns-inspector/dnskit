@@ -18,7 +18,9 @@ import Foundation
 
 /// Describes the record data for an NSEC record
 public struct NSECRecordData: RecordData {
+    /// The next available record name
     public let nextName: String
+    /// The available record types. Values are compatible with ``RecordType``, however there may be values here that are not represented in that enum.
     public let types: Set<UInt16>
 
     internal init(recordData: Data) throws {
@@ -88,13 +90,17 @@ public enum NSEC3Algorithm: UInt8, Sendable {
 
 /// Describes the record data for an NSEC3 record
 public struct NSEC3RecordData: RecordData {
+    /// The NSEC3 hashing algorithm. Only SHA-1 is defined.
     public let algorithm: NSEC3Algorithm
+    /// The opt-out flag value
     public let optOut: Bool
+    /// The iteration count
     public let iterations: UInt16
-    public let saltLength: UInt8
+    /// The salt used during hashing
     public let salt: Data?
-    public let hashLength: UInt8
+    /// The hashed next name
     public let hashedNextName: Data
+    /// The available record types. Values are compatible with ``RecordType``, however there may be values here that are not represented in that enum.
     public let types: Set<UInt16>
 
     internal init(recordData: Data) throws {
@@ -115,23 +121,23 @@ public struct NSEC3RecordData: RecordData {
         }
         offset += 2
 
-        self.saltLength = dataArray[offset] as UInt8
+        let saltLength = dataArray[offset] as UInt8
         offset += 1
 
-        if self.saltLength > 0 {
-            let salt = Data(dataArray[offset..<offset+Int(self.saltLength)])
+        if saltLength > 0 {
+            let salt = Data(dataArray[offset..<offset+Int(saltLength)])
             self.salt = salt
-            offset += Int(self.saltLength)
+            offset += Int(saltLength)
         } else {
             self.salt = nil
         }
 
-        self.hashLength = dataArray[offset] as UInt8
+        let hashLength = dataArray[offset] as UInt8
         offset += 1
 
-        let hashedNextName = Data(dataArray[offset..<offset+Int(self.hashLength)])
+        let hashedNextName = Data(dataArray[offset..<offset+Int(hashLength)])
         self.hashedNextName = hashedNextName
-        offset += Int(self.hashLength)
+        offset += Int(hashLength)
 
         self.types = NSECRecordData.parseTypeFlags(recordData, offset)
     }

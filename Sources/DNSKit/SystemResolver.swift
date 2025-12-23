@@ -39,7 +39,7 @@ public final class SystemResolver: Sendable {
     public static func query(question: Question, dnssecOk: Bool = false) throws -> Message {
         let id = UInt16.random(in: 0...65535)
 
-        printDebug("[\(#fileID):\(#line)] Query \(question.recordType): \(question.name)")
+        printDebug("[\(#fileID):\(#line)] Query \(id) - \(question.recordType): \(question.name)")
 
         let state: res_9_state = UnsafeMutablePointer.allocate(capacity: MemoryLayout<res_9_state>.size)
         res_9_ninit(state)
@@ -65,6 +65,7 @@ public final class SystemResolver: Sendable {
         }
 
         let messageData = Data(bytes: answer, count: Int(NS_MAXMSG))
+        printDebug("[\(#fileID):\(#line)] Got reply \(id)")
         return try Message(messageData: messageData)
     }
 

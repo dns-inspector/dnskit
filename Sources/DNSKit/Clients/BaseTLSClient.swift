@@ -154,7 +154,7 @@ internal struct BaseTLSClient: Sendable {
 
                         let message: Message
                         do {
-                            message = try Message(messageData: messageContent, elapsed: timer.stop())
+                            message = try Message(messageData: messageContent)
                         } catch {
                             printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                             completeRequest(.failure(.invalidData(error.localizedDescription)))
@@ -163,7 +163,7 @@ internal struct BaseTLSClient: Sendable {
 
                         printDebug("[\(#fileID):\(#line)] Answer: \(messageContent.hexEncodedString())")
 
-                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress)))
+                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress, elapsed: timer.stop())))
                         return
                     }
                 }

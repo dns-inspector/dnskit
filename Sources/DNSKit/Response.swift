@@ -20,6 +20,8 @@ import Foundation
 public struct Response: Sendable {
     /// The reply message
     public let message: Message
-    /// The server that produced this reply
-    public let serverAddress: String
+    /// The server that produced this reply.
+    public let serverAddress: String?
+    /// The amount of time (in nanoseconds) it took to receive this response to our question
+    public let elapsed: UInt64
 }

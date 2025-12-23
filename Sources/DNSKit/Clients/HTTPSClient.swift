@@ -183,9 +183,9 @@ private final class URLSessionClient {
 
             let message: Message
             do {
-                message = try Message(messageData: data, elapsed: timer.stop())
+                message = try Message(messageData: data)
                 printDebug("[\(#fileID):\(#line)] Answer \(data.hexEncodedString())")
-                complete(.success(Response(message: message, serverAddress: url.absoluteString)))
+                complete(.success(Response(message: message, serverAddress: url.absoluteString, elapsed: timer.stop())))
             } catch {
                 printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                 complete(.failure(.invalidData(error.localizedDescription)))
@@ -386,9 +386,9 @@ private final class CFHTTPClient {
 
                 let message: Message
                 do {
-                    message = try Message(messageData: body, elapsed: timer.stop())
+                    message = try Message(messageData: body)
                     printDebug("[\(#fileID):\(#line)] Answer \(body.hexEncodedString())")
-                    completeRequest(.success(Response(message: message, serverAddress: url.absoluteString)))
+                    completeRequest(.success(Response(message: message, serverAddress: url.absoluteString, elapsed: timer.stop())))
                 } catch {
                     printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                     completeRequest(.failure(.invalidData(error.localizedDescription)))

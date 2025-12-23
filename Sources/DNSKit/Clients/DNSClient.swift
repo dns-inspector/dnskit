@@ -84,7 +84,7 @@ internal final class DNSClient: IClient, Sendable {
                     if !self.transportOptions.dnsPrefersTcp {
                         let message: Message
                         do {
-                            message = try Message(messageData: firstData, elapsed: timer.stop())
+                            message = try Message(messageData: firstData)
                         } catch {
                             printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                             completeRequest(.failure(.unexpectedResponse(error)))
@@ -93,7 +93,7 @@ internal final class DNSClient: IClient, Sendable {
 
                         printDebug("[\(#fileID):\(#line)] Answer: \(firstData.hexEncodedString())")
 
-                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress)))
+                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress, elapsed: timer.stop())))
                         return
                     }
 
@@ -135,7 +135,7 @@ internal final class DNSClient: IClient, Sendable {
 
                         let message: Message
                         do {
-                            message = try Message(messageData: messageContent, elapsed: timer.stop())
+                            message = try Message(messageData: messageContent)
                         } catch {
                             printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                             completeRequest(.failure(.invalidData(error.localizedDescription)))
@@ -144,7 +144,7 @@ internal final class DNSClient: IClient, Sendable {
 
                         printDebug("[\(#fileID):\(#line)] Answer: \(messageContent.hexEncodedString())")
 
-                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress)))
+                        completeRequest(.success(Response(message: message, serverAddress: self.address.ipAddress, elapsed: timer.stop())))
                         return
                     }
                 }
