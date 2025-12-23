@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes a DNS answer
-public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertible, Sendable {
+public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertible, Sendable, CustomDebugStringConvertible {
     /// Resource name
     public let name: String
     /// Record type
@@ -47,6 +47,10 @@ public struct Answer: Identifiable, Equatable, Comparable, CustomStringConvertib
 
     public var description: String {
         return "\(self.name) \(self.ttlSeconds) \(self.recordClass.string()) \(self.recordType.string()) \(self.data.description)"
+    }
+
+    public var debugDescription: String {
+        return self.description
     }
 
     /// A hexadecimal representation of the record data for this answer

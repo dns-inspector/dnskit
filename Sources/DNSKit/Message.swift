@@ -164,6 +164,7 @@ public struct Message: Sendable {
                 throw DNSKitError.invalidData("Invalid DNS message: data length must match record data size")
             }
             answerStartOffset = valueStartOffset+Int(dataLength)
+            printDebug("[\(#fileID):\(#line)] Next record starts at \(answerStartOffset) (\(valueStartOffset)+\(dataLength))")
 
             let ignoredRecordTypes: [UInt16] = [
                 41
@@ -213,12 +214,14 @@ public struct Message: Sendable {
                     recordData = try DSRecordData(recordData: value)
                 case .RRSIG:
                     recordData = try RRSIGRecordData(recordData: value)
+                case .NSEC:
+                    recordData = try NSECRecordData(recordData: value)
                 case .DNSKEY:
                     recordData = try DNSKEYRecordData(recordData: value)
                 case .HTTPS:
                     recordData = try HTTPSRecordData(recordData: value)
                 case .NSEC3:
-                    recordData = try NSEC3RecordData(messageData: messageData, startOffset: valueStartOffset)
+                    recordData = try NSEC3RecordData(recordData: value)
                 }
             } catch {
                 printError("[\(#fileID):\(#line)] Error serlizing record data: \(error)")

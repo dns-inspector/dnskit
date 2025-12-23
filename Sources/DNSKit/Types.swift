@@ -42,6 +42,8 @@ public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
     case DS = 43
     /// Resource record signature record
     case RRSIG = 46
+    /// Next secure record
+    case NSEC = 47
     /// DNS key record
     case DNSKEY = 48
     /// NSEC3 record
