@@ -52,6 +52,8 @@ final class ClientTests {
             } else {
                 fatalError("Attempted to use Quic client on unsupported platform")
             }
+        case .System:
+            self.client = try SystemClient(address: serverAddress, transportOptions: transportOptions)
         }
     }
 

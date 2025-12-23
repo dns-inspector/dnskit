@@ -95,6 +95,11 @@ public enum TransportType: String, Codable, CaseIterable, Sendable {
     ///
     /// Expects the server address to be an IPv4 or IPv6 address with optional port, defaulting to 853.
     case QUIC = "quic"
+    /// Special transport type to indicate to use the system's DNS resolver.
+    ///
+    /// When using this option in ``Query/init(transportType:transportOptions:serverAddresses:recordType:name:queryOptions:)``
+    /// the `serverAddresses` and `transportOptions` values are ingored.
+    case System = "system"
 
     public func string() -> String {
         return String(describing: self)

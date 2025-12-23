@@ -148,6 +148,8 @@ public final class Query: Sendable {
                 } else {
                     fatalError("Attempted to use quic on unsupported target")
                 }
+            case .System:
+                clients.append(try SystemClient(address: serverAddress, transportOptions: transportOptions))
             }
         }
 
@@ -264,6 +266,8 @@ public final class Query: Sendable {
                     } else {
                         fatalError("Attempted to use quic on unsupported target")
                     }
+                case .System:
+                    _ = try SystemClient(address: serverAddress, transportOptions: TransportOptions())
                 }
             }
             return nil
