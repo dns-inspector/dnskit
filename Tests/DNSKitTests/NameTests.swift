@@ -56,6 +56,19 @@ final class NameTests: XCTestCase {
         XCTAssertEqual(dataOffset, 14)
     }
 
+    func testReadUpperBoundsPointer() throws {
+        var nameLiteral = Array<UInt8>.init(repeating: 0, count: 600)
+        nameLiteral[0] = 0xC1
+        nameLiteral[1] = 0xAA
+        nameLiteral[426] = 0x01
+        nameLiteral[427] = 0x61
+        nameLiteral[428] = 0x00
+        let data = Data(bytes: nameLiteral, count: nameLiteral.count)
+        let (name, dataOffset) = try Name.readName(data, startOffset: 0)
+        XCTAssertEqual(name, "a.")
+        XCTAssertEqual(dataOffset, 2)
+    }
+
     func testReadRoot() throws {
         let nameLiteral: [UInt8] = [ 0x00 ]
         let data = Data(bytes: nameLiteral, count: nameLiteral.count)

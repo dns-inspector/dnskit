@@ -66,6 +66,8 @@ public class Name {
     ///   - startOffset: The offset to start reading the name from
     /// - Returns: A tuple of the DNS name and the offset of where to continue reading data after this name has ended.
     public static func readName(_ data: Data, startOffset: Int) throws -> (name: String, dataOffset: Int) {
+        printDebug("[\(#fileID):\(#line)] Attempt to read name at \(startOffset)")
+
         if startOffset < 0 || startOffset >= data.count {
             throw DNSKitError.invalidData("Invalid start offset when reading DNS name")
         }
@@ -79,67 +81,65 @@ public class Name {
             var dataOffset = 0
             var name = String()
 
-            // DNS compression can apply to the entire name or individual lables, so check for pointers at each label
-            while true {
-                var pointerFlag = buffer[offset...offset].load(as: UInt8.self)
-                if pointerFlag == 0 {
-                    break
+            var labelFlag = buffer[offset...offset].load(as: UInt8.self)
+            var depth = 0
+            while labelFlag > 0 {
+                if depth > 10 {
+                    throw DNSKitError.invalidData("Maximum pointer depth reached")
                 }
 
-                if (pointerFlag & (1 << 7)) != 0 {
-                    // Label is a pointer
-                    if dataOffset == 0 {
-                        dataOffset = offset+2
+                if labelFlag < 64 {
+                    // Label value, labelFlag is length
+                    if labelFlag >= buffer.count {
+                        throw DNSKitError.invalidData("Label length outside of data bounds")
                     }
 
-                    var nextOffset = offset
-                    var depth = 0
+                    let labelData = Data(buffer[offset+1..<offset+1+Int(labelFlag)])
+                    printDebug("[\(#fileID):\(#line)] Reading \(labelFlag) bytes at \(offset+1)")
+                    offset += 1 + Int(labelFlag)
+                    labelFlag = buffer[offset...offset].load(as: UInt8.self)
 
-                    // Continue to follow pointers until we get to a length, up to a maximum depth of 10
-                    while (pointerFlag & (1 << 7)) != 0 {
-                        if depth > 10 {
-                            throw DNSKitError.invalidData("Maximum pointer depth reached")
-                        }
-
-                        nextOffset = Int(buffer[offset+1...offset+1].load(as: UInt8.self))
-                        if nextOffset > data.count-1 {
-                            throw DNSKitError.invalidData("Pointer offset outside of data bounds")
-                        }
-
-                        pointerFlag = buffer[nextOffset...nextOffset].load(as: UInt8.self)
-                        depth += 1
+                    guard let label = String(data: labelData, encoding: .ascii) else {
+                        printError("[\(#fileID):\(#line)] Invalid data in label text: \(labelData.hexEncodedString())")
+                        throw DNSKitError.invalidData("Invalid data in label text")
                     }
 
-                    offset = nextOffset
+                    if label.contains(".") {
+                        throw DNSKitError.invalidData("Illegal characters in label text")
+                    }
+
+                    name.append("\(label).")
+                    printDebug("[\(#fileID):\(#line)] Read label: \(label).")
+                    continue
                 }
 
-                let length = buffer[offset...offset].load(as: UInt8.self)
-                if length == 0 {
-                    throw DNSKitError.invalidData("Length is zero")
+                // Label is a pointer, lower 6 bits of the first byte + next byte are the destination
+                let nextByte = buffer[offset+1...offset+1].load(as: UInt8.self)
+                let b = [ labelFlag & 0x3f, nextByte ]
+                let destination = b.withUnsafeBytes {
+                    return $0.load(as: UInt16.self).bigEndian
                 }
-
-                offset += 1
-
-                if offset+Int(length) > data.count-1 {
-                    throw DNSKitError.invalidData("Length or offset outside of data bounds")
+                printDebug("[\(#fileID):\(#line)] Label is a pointer to \(destination)")
+                if dataOffset == 0 {
+                    dataOffset = offset+2
                 }
-
-                guard let label = String(data: data[offset...offset+Int(length)-1], encoding: .ascii) else {
-                    throw DNSKitError.invalidData("Invalid data in label text")
+                if Int(destination) >= buffer.count {
+                    throw DNSKitError.invalidData("Pointer offset outside of data bounds")
                 }
-                offset += Int(length)
+                offset = Int(destination)
+                labelFlag = buffer[offset...offset].load(as: UInt8.self)
+                depth += 1
+            }
 
-                if label.contains(".") {
-                    throw DNSKitError.invalidData("Illegal characters in label text")
-                }
-
-                name.append("\(label).")
+            if name == "" {
+                printError("[\(#fileID):\(#line)] Unexpected end of record name")
+                throw DNSKitError.invalidData("Length is zero")
             }
 
             if dataOffset == 0 {
                 dataOffset = startOffset + name.count + 1
             }
-
+            printDebug("[\(#fileID):\(#line)] Read name \(name), data offset at \(dataOffset)")
             return (name, dataOffset)
         }
     }
