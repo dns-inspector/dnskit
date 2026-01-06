@@ -21,6 +21,7 @@ protocol IClientTests {
     func testQuery() async throws
     func testPTRQuery() async throws
     func testQueryNXDOMAIN() async throws
+    func testQueryUTF8() async throws
     func testAuthenticateMessageA() async throws
     func testAuthenticateMessageSOA() async throws
     func testAuthenticateRoot() async throws
@@ -82,6 +83,17 @@ final class ClientTests {
         let response = try await query.execute()
         let reply = response.message
         XCTAssertEqual(reply.responseCode, .NXDOMAIN, "Response code must be NXDOMAIN")
+    }
+
+    func testQueryUTF8() async throws {
+        let query = Query(clients: [client], recordType: .TXT, name: "❤️.dns-inspector.com")
+        let response = try await query.execute()
+        let reply = response.message
+        XCTAssertTrue(reply.answers.count >= 1, "Reply must contain at least one answer")
+        XCTAssertEqual(reply.answers[0].recordType, .TXT, "Answer must include an TXT record")
+        XCTAssertNotNil(reply.answers[0].data as? TXTRecordData, "Answer must include data")
+        let data = reply.answers[0].data as! TXTRecordData
+        XCTAssertEqual(data.text, "We ❤️ you too!", "Answer must be expected")
     }
 
     func testAuthenticateMessageA() async throws {

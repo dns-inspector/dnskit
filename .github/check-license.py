@@ -70,8 +70,14 @@ for source_dir in [ "Sources", "Tests", ".github" ]:
     swift_files = list(Path(source_dir).rglob("*.[Ss][Ww][Ii][Ff][Tt]"))
     go_files = list(Path(source_dir).rglob("*.[Gg][Oo]"))
     py_files = list(Path(source_dir).rglob("*.[Pp][Yy]"))
+    c_files = list(Path(source_dir).rglob("*.[hc]"))
 
     for filepath in swift_files:
+        if not check_file_header(filepath, 0, ["// ", "//"]):
+            print(str(filepath) + ": Invalid license header", file=sys.stderr)
+            all_passed = False
+
+    for filepath in c_files:
         if not check_file_header(filepath, 0, ["// ", "//"]):
             print(str(filepath) + ": Invalid license header", file=sys.stderr)
             all_passed = False

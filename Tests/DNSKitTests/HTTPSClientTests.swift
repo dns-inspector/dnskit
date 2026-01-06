@@ -30,6 +30,10 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIps: ["20.47.87.112"]), serverAddress: "https://dns.dns-inspector.com/dns-query").testQueryNXDOMAIN()
     }
 
+    func testQueryUTF8() async throws {
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIps: ["20.47.87.112"]), serverAddress: "https://dns.dns-inspector.com/dns-query").testQueryUTF8()
+    }
+
     func testAuthenticateMessageA() async throws {
         try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(httpsBootstrapIps: ["20.47.87.112"]), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateMessageA()
     }

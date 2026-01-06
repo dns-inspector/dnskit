@@ -28,6 +28,9 @@ public class Name {
 
         var buf = Data()
 
+        // Encode the name with punycode if needed, this always returns even if the name doesn't have any non-ASCII characters.
+        let name = try Punycode.toASCII(name)
+
         // Note that we're not using the splitName function from this class
         // because the behaviour is different and undesired for this specific
         // use-case

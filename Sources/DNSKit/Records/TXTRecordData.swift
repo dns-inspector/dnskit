@@ -34,9 +34,7 @@ public struct TXTRecordData: RecordData {
             let length = recordData.withUnsafeBytes {
                 return $0.loadUnaligned(fromByteOffset: offset, as: UInt8.self)
             }
-            print("Reading \(length)B of data")
             if length == 0 {
-                print("Pack it up, we're done here")
                 moreToRead = false
                 break
             }
@@ -46,7 +44,6 @@ public struct TXTRecordData: RecordData {
 
             offset += 1
             let data = recordData.subdata(in: offset..<offset+Int(length))
-            print("Data: \(data.hexEncodedString())")
             textData.append(data)
             offset += Int(length)
 

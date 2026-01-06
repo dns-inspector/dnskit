@@ -30,6 +30,10 @@ final class QuicClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .QUIC, serverAddress: "20.47.87.112:853").testQueryNXDOMAIN()
     }
 
+    func testQueryUTF8() async throws {
+        try await ClientTests(transportType: .QUIC, serverAddress: "20.47.87.112:853").testQueryUTF8()
+    }
+
     func testAuthenticateMessageA() async throws {
         try await ClientTests(transportType: .QUIC, serverAddress: "20.47.87.112:853").testAuthenticateMessageA()
     }

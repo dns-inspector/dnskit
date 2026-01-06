@@ -30,6 +30,10 @@ final class SystemClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .System, serverAddress: "").testQueryNXDOMAIN()
     }
 
+    func testQueryUTF8() async throws {
+        try await ClientTests(transportType: .System, serverAddress: "").testQueryUTF8()
+    }
+
     func testAuthenticateMessageA() async throws {
         try await ClientTests(transportType: .System, serverAddress: "").testAuthenticateMessageA()
     }

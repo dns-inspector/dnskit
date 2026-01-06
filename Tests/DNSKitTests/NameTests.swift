@@ -23,6 +23,8 @@ final class NameTests: XCTestCase {
             ("www.example.com", "03777777076578616d706c6503636f6d00"),
             ("www.example.com.", "03777777076578616d706c6503636f6d00"),
             (".", "00"),
+            ("www．example.com", "03777777076578616d706c6503636f6d00"),
+            ("💩.la", "08786e2d2d6c733868026c6100"),
         ]
 
         for testCase in cases {
@@ -191,5 +193,26 @@ final class NameTests: XCTestCase {
         XCTAssertEqual(parents[0], "example.com.")
         XCTAssertEqual(parents[1], "com.")
         XCTAssertEqual(parents[2], ".")
+    }
+
+    func testPunycodeToASCII() throws {
+        XCTAssertEqual(try Punycode.toASCII("❤️.dns-inspector.com"), "xn--qei.dns-inspector.com")
+        XCTAssertEqual(try Punycode.toASCII("mañana.com"), "xn--maana-pta.com")
+        XCTAssertEqual(try Punycode.toASCII("example.com."), "example.com.")
+        XCTAssertEqual(try Punycode.toASCII("bücher.com"), "xn--bcher-kva.com")
+        XCTAssertEqual(try Punycode.toASCII("café.com"), "xn--caf-dma.com")
+        XCTAssertEqual(try Punycode.toASCII("büchér.com"), "xn--bchr-dpa5i.com")
+        XCTAssertEqual(try Punycode.toASCII("☃-⌘.com"), "xn----dqo34k.com")
+        XCTAssertEqual(try Punycode.toASCII("퐀☃-⌘.com"), "xn----dqo34kn65z.com")
+        XCTAssertEqual(try Punycode.toASCII("💩.la"), "xn--ls8h.la")
+    }
+
+    func testProhibitedCharacters() {
+        do {
+            _ = try Punycode.toASCII("\u{061C}.example.com") // 6.3  ARABIC LETTER MARK
+            XCTFail("No failure seen when provided name with illegal characters")
+        } catch {
+            // Das good!
+        }
     }
 }

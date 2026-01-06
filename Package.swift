@@ -36,13 +36,23 @@ let package = Package(
     targets: [
         .target(
             name: "DNSKit",
-            dependencies: ["Bsdresolv"],
+            dependencies: ["Bsdresolv", "IdnaRules"],
             exclude: [
-                "WHOIS/update_whois.py"
+                "WHOIS/update_whois.py",
             ],
             linkerSettings: [
                 .linkedLibrary("resolv")
             ]
+        ),
+        .target(
+            name: "IdnaRules",
+            dependencies: [],
+            exclude: [
+                "update_rules.py"
+            ],
+            sources: [
+                "rules.c"
+            ],
         ),
         .systemLibrary(
             name: "Bsdresolv",
@@ -51,7 +61,7 @@ let package = Package(
         ),
         .testTarget(
             name: "DNSKitTests",
-            dependencies: ["DNSKit"],
+            dependencies: ["IdnaRules", "DNSKit"],
             exclude: [
                 "TestServer/"
             ],
