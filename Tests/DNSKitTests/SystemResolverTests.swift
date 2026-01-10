@@ -40,7 +40,7 @@ import Testing
     }
 
     @Test func queryNXDOMAIN() async throws {
-        let reply = try SystemResolver.query(question: Question(name: "if-you-register-this-domain-im-going-to-be-very-angry.com", recordType: .A))
+        let reply = try SystemResolver.query(question: Question(name: "if_you_register_this_domain_im_going_to_be_very_angry.com", recordType: .A))
         #expect(reply.responseCode == .NXDOMAIN)
     }
 
@@ -51,10 +51,10 @@ import Testing
 
         #expect(reply.answers.count {
             return $0.recordType == .A
-        } > 0, "Reply must contain at least one A record")
+        } > 0, "Reply must contain at least one A record, none found in \(reply)")
         #expect(reply.answers.count {
             return $0.recordType == .RRSIG
-        } > 0, "Reply must contiene at least one RRSIG record")
+        } > 0, "Reply must contiene at least one RRSIG record, none found in \(reply)")
 
         let dnssecResult = try SystemResolver.authenticate(message: reply)
         #expect(dnssecResult.chainTrusted)
@@ -62,7 +62,7 @@ import Testing
     }
 
     @Test func queryNXDOMAINDNSSEC() async throws {
-        let reply = try SystemResolver.query(question: Question(name: "if-you-register-this-domain-im-going-to-be-very-angry.com", recordType: .A), dnssecOk: true)
+        let reply = try SystemResolver.query(question: Question(name: "if_you_register_this_domain_im_going_to_be_very_angry.com", recordType: .A), dnssecOk: true)
         #expect(reply.responseCode == .NXDOMAIN)
         // TODO: finish this test once validation of NSEC/NSEC3 messages are passed
     }

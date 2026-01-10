@@ -77,7 +77,13 @@ public struct Punycode: Sendable {
             output.append("-")
         }
 
+        // Roughly described, punycode describes a means to encode Unicode characters as a base-36 number.
+        // These numbers include the position of the character and the scalar value itself.
+        // Individual characters may result in multiple base-36 values (that is, a-z 0-9 - NOT hex).
+        // As each character is encoded, the algorithm is adapted to bias similar characters,
+        // resulting in smaller (therefor shorter) numbers.
         while scalarsToEncode > 0 {
+            // We sort the characters to encode by smallest first
             var m = Int32.max
             for scalar in label.unicodeScalars {
                 if scalar.value >= n && scalar.value < m {

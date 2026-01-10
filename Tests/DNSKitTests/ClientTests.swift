@@ -79,7 +79,7 @@ final class ClientTests {
     }
 
     func testQueryNXDOMAIN() async throws {
-        let query = Query(clients: [client], recordType: .A, name: "if-you-register-this-domain-im-going-to-be-very-angry.com")
+        let query = Query(clients: [client], recordType: .A, name: "if_you_register_this_domain_im_going_to_be_very_angry.com")
         let response = try await query.execute()
         let reply = response.message
         XCTAssertEqual(reply.responseCode, .NXDOMAIN, "Response code must be NXDOMAIN")
