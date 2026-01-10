@@ -1,0 +1,14 @@
+{
+  "originHash" : "b49ff3f549fbca08b745a2e3eda65a9aa72299a3dc04b0cd283b10bbceeb7b41",
+  "pins" : [
+    {
+      "identity" : "idnarules-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dns-inspector/IDNARules-Swift.git",
+      "state" : {
+        "revision" : "7f47c398379e46f324bb82f803829026c48763d0"
+      }
+    }
+  ],
+  "version" : 3
+}

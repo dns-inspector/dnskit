@@ -33,26 +33,22 @@ let package = Package(
             targets: ["DNSKit"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/dns-inspector/IDNARules-Swift.git", revision: "7f47c398379e46f324bb82f803829026c48763d0"),
+    ],
     targets: [
         .target(
             name: "DNSKit",
-            dependencies: ["Bsdresolv", "IdnaRules"],
+            dependencies: [
+                "Bsdresolv",
+                .product(name: "IdnaRules", package: "IDNARules-Swift"),
+            ],
             exclude: [
                 "WHOIS/update_whois.py",
             ],
             linkerSettings: [
                 .linkedLibrary("resolv")
             ]
-        ),
-        .target(
-            name: "IdnaRules",
-            dependencies: [],
-            exclude: [
-                "update_rules.py"
-            ],
-            sources: [
-                "rules.c"
-            ],
         ),
         .systemLibrary(
             name: "Bsdresolv",
@@ -61,7 +57,10 @@ let package = Package(
         ),
         .testTarget(
             name: "DNSKitTests",
-            dependencies: ["IdnaRules", "DNSKit"],
+            dependencies: [
+                "DNSKit",
+                .product(name: "IdnaRules", package: "IDNARules-Swift"),
+            ],
             exclude: [
                 "TestServer/"
             ],
