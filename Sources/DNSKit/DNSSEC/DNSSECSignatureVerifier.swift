@@ -190,11 +190,9 @@ internal struct DNSSECSignatureVerifier {
         if verified {
             printDebug("[\(#fileID):\(#line)] Signature validation passed for \(answers[0].recordType) \(answers[0].name)")
         } else {
-            if log?.currentLevel() == .Debug {
-                printDebug("[\(#fileID):\(#line)] Public key: \(dnskey.publicKey.hexEncodedString())")
-                printDebug("[\(#fileID):\(#line)] Signed data: \(signedData.hexEncodedString())")
-                printDebug("[\(#fileID):\(#line)] Signature: \(signature.hexEncodedString())")
-            }
+            printDebug("[\(#fileID):\(#line)] Public key: \(dnskey.publicKey.hexEncodedString())")
+            printDebug("[\(#fileID):\(#line)] Signed data: \(signedData.hexEncodedString())")
+            printDebug("[\(#fileID):\(#line)] Signature: \(signature.hexEncodedString())")
             printError("[\(#fileID):\(#line)] Signature validation failed with algorithm \(String(describing: algorithm))")
             throw DNSSECError.signatureFailed
         }

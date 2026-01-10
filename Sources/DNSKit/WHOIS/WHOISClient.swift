@@ -126,9 +126,7 @@ public struct WHOISClient: Sendable {
                     // Have to use NSString because NSRegularExpression behaves poorly with Swift's String
                     let response = NSString(data: data, encoding: NSUTF8StringEncoding) ?? ""
 
-                    if log?.currentLevel() == .Debug {
-                        printDebug("[\(#fileID):\(#line)] WHOIS response: \(response)")
-                    }
+                    printDebug("[\(#fileID):\(#line)] WHOIS response: \(response)")
 
                     let reply = WHOISReply(server: server, data: response as String)
                     replies.Append(reply)
