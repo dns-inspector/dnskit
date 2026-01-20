@@ -48,7 +48,7 @@ jobs:
 
       - name: "Restore Cached SwiftLint"
         id: restore_swiftlint
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb #pin v5.0.1
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 #pin v5.0.2
         with:
           key: ${{ steps.prepare.outputs.SWIFTLINT_CACHE_KEY }}
           path: |
