@@ -22,7 +22,7 @@ permissions:
 
 env:
   TEST_DEVICE: "iPhone 17 Pro"
-  XCODE_VERSION: "Xcode_26.0" # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+  XCODE_VERSION: "Xcode_26.2" # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: "Checkout Source"
         id: checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #pin v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #pin v6.0.2
         with:
           persist-credentials: false
 
@@ -48,7 +48,7 @@ jobs:
 
       - name: "Restore Cached SwiftLint"
         id: restore_swiftlint
-        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb #pin v5.0.1
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 #pin v5.0.3
         with:
           key: ${{ steps.prepare.outputs.SWIFTLINT_CACHE_KEY }}
           path: |
@@ -70,7 +70,7 @@ jobs:
 
       - name: "Install Go"
         id: install_go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c #pin v6.1.0
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 #pin v6.2.0
         with:
           go-version: "stable"
           cache-dependency-path: Tests/DNSKitTests/TestServer/go.sum

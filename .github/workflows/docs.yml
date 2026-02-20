@@ -17,7 +17,7 @@ permissions:
   packages: read
 
 env:
-  XCODE_VERSION: "Xcode_26.0" # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+  XCODE_VERSION: "Xcode_26.2" # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
 
 jobs:
   build:
@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: "Checkout Source"
         id: checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #pin v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #pin v6.0.2
         with:
           persist-credentials: false
 
