@@ -54,6 +54,10 @@ final class QuicClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .QUIC, serverAddress: "20.47.87.112:853").testAuthenticateCNAME()
     }
 
+    func testAuthenticateNXDOMAIN() async throws {
+        try await ClientTests(transportType: .QUIC, serverAddress: "20.47.87.112:853").testAuthenticateNXDOMAIN()
+    }
+
     func testLocalControl() async throws {
         try await ClientTests(transportType: .QUIC, serverAddress: "127.0.0.1:8404").testLocalControl()
     }

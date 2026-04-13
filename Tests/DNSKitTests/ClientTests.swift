@@ -138,6 +138,15 @@ final class ClientTests {
         XCTAssertTrue(result.signatureVerified, "Signature must be verified")
     }
 
+    func testAuthenticateNXDOMAIN() async throws {
+        let query = Query(clients: [client], recordType: .A, name: "this_domain_does_not_exist.com", queryOptions: QueryOptions(dnssecRequested: true))
+        let response = try await query.execute()
+        let reply = response.message
+        let result = try await query.authenticate(message: reply)
+        XCTAssertTrue(result.chainTrusted, "Chain must be trusted")
+        XCTAssertTrue(result.signatureVerified, "Signature must be verified")
+    }
+
     func testLocalControl() async throws {
         let query = Query(clients: [client], recordType: .A, name: "control.example.com")
         let response = try await query.execute()

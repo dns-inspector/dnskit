@@ -48,6 +48,8 @@ public struct Question: Sendable {
     }
 
     internal func data() throws -> Data {
+        printDebug("[\(#fileID):\(#line)] Encoding question \(recordClass.string()) \(recordType.string()) \(name)")
+
         var data = Data()
         let name = try Name.stringToName(self.name)
         data.append(name)

@@ -19,9 +19,9 @@ import Foundation
 /// Subset of the DNSSEC Client for collecting DNSSEC resources
 internal struct DNSSECResourceCollector {
     /// Get all zones present in this array of answers. Returns a de-duped list.
-    internal static func getAllZonesInAnswers(_ answers: [Answer]) -> [String] {
+    internal static func getAllZonesInReply(_ message: Message) -> [String] {
         var zones: [String] = []
-        for answer in answers {
+        for answer in message.answers + message.authority {
             zones.addIfNotContains(answer.name)
         }
         return zones
@@ -31,7 +31,7 @@ internal struct DNSSECResourceCollector {
     internal static func getAllZonesInMessage(_ message: Message) -> [String] {
         var zonesToFetch: [String] = []
 
-        for answer in message.answers {
+        for answer in message.answers + message.authority {
             if answer.recordType != .RRSIG {
                 continue
             }

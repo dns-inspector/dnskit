@@ -54,6 +54,10 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(useHttp2: false), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateCNAME()
     }
 
+    func testAuthenticateNXDOMAIN() async throws {
+        try await ClientTests(transportType: .HTTPS, transportOptions: TransportOptions(useHttp2: false), serverAddress: "https://dns.dns-inspector.com/dns-query").testAuthenticateNXDOMAIN()
+    }
+
     func testLocalControl() async throws {
         try await ClientTests(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query").testLocalControl()
     }

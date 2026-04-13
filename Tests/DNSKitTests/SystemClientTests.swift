@@ -54,6 +54,10 @@ final class SystemClientTests: XCTestCase, IClientTests {
         try await ClientTests(transportType: .System, serverAddress: "").testAuthenticateCNAME()
     }
 
+    func testAuthenticateNXDOMAIN() async throws {
+        try await ClientTests(transportType: .System, serverAddress: "").testAuthenticateNXDOMAIN()
+    }
+
     func testLocalControl() async throws {
         // Test does not apply
     }

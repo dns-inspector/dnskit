@@ -135,7 +135,7 @@ internal struct DNSSECClient {
 
         // Establish chain of trust with the root zone
         do {
-            try DNSSECChainEvalulator.evalulateChain(ofZones: DNSSECResourceCollector.getAllZonesInAnswers(message.answers), withResources: &resources, andKeyMap: &keyMap)
+            try DNSSECChainEvalulator.evalulateChain(ofZones: DNSSECResourceCollector.getAllZonesInReply(message), withResources: &resources, andKeyMap: &keyMap)
             result.chainTrusted = true
         } catch {
             if let error = error as? DNSSECError {

@@ -20,7 +20,7 @@ import Foundation
 internal struct DNSSECSignatureVerifier {
     internal static func verifySignatures(ofMessage message: Message, andResources resources: inout [String: (Message, Message?)], referencingKeyMap keyMap: inout [UInt32: [Answer]]) throws {
         // Validate signatures of the records from the original message
-        for zone in DNSSECResourceCollector.getAllZonesInAnswers(message.answers) {
+        for zone in DNSSECResourceCollector.getAllZonesInReply(message) {
             try verifyMessage(message, forZone: zone, referencingKeyMap: &keyMap)
         }
 
@@ -45,8 +45,15 @@ internal struct DNSSECSignatureVerifier {
                 rrset.append(answer)
             }
         }
+        for answer in message.authority where answer.name == zone {
+            if answer.recordType == .RRSIG {
+                rrsig = answer
+            } else {
+                rrset.append(answer)
+            }
+        }
         guard let rrsig = rrsig else {
-            printError("[\(#fileID):\(#line)] No rrsig found for zone \(zone)")
+            printError("[\(#fileID):\(#line)] No rrsig found for zone \(zone) among \(message.answers.count) records")
             throw DNSSECError.noSignatures("No signature found for resource records belonging to \(zone)")
         }
         guard let rrsigData = rrsig.data as? RRSIGRecordData else {
