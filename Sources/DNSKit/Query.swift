@@ -127,14 +127,17 @@ public final class Query: Sendable {
 
         var clients: [IClient] = []
 
-        for i in 0..<serverAddresses.count {
-            let serverAddress = serverAddresses[i]
-            switch transportType {
-            case .DNS:
+        switch transportType {
+        case .DNS:
+            for serverAddress in serverAddresses {
                 clients.append(try DNSClient(address: serverAddress, transportOptions: transportOptions))
-            case .TLS:
+            }
+        case .TLS:
+            for serverAddress in serverAddresses {
                 clients.append(try TLSClient(address: serverAddress, transportOptions: transportOptions))
-            case .HTTPS:
+            }
+        case .HTTPS:
+            for serverAddress in serverAddresses {
                 if let bootstrapIps = transportOptions.httpsBootstrapIps {
                     for bootstrapIp in bootstrapIps {
                         clients.append(try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: transportOptions))
@@ -142,15 +145,17 @@ public final class Query: Sendable {
                 } else {
                     clients.append(try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions))
                 }
-            case .QUIC:
-                if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
-                    clients.append(try QuicClient(address: serverAddress, transportOptions: transportOptions))
-                } else {
-                    fatalError("Attempted to use quic on unsupported target")
-                }
-            case .System:
-                clients.append(try SystemClient(address: serverAddress, transportOptions: transportOptions))
             }
+        case .QUIC:
+            if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
+                for serverAddress in serverAddresses {
+                    clients.append(try QuicClient(address: serverAddress, transportOptions: transportOptions))
+                }
+            } else {
+                fatalError("Attempted to use quic on unsupported target")
+            }
+        case .System:
+            clients.append(try SystemClient(address: "", transportOptions: transportOptions))
         }
 
         self.clients = clients
