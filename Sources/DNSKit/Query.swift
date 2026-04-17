@@ -17,7 +17,7 @@
 import Foundation
 
 /// Describes transport options for the DNS request
-public struct TransportOptions: Sendable {
+public struct TransportOptions: Sendable, Codable {
     /// If the transport type is DNS, should TCP connections be used instead of UDP.
     ///
     /// TCP is preferred over UDP by this package. Modern networks are more than good enough that any performance 
@@ -52,13 +52,17 @@ public struct TransportOptions: Sendable {
     /// > Important: This option cannot be used in conjunction with ``httpsBootstrapIps``. This is a known limitation tracked in [this issue](https://github.com/dns-inspector/dnskit/issues/11).
     public var useHttp2: Bool = true
 
+    /// The name of the query parameter that will contain the DNS query in the request. Only applies to the DNS over HTTPS client.
+    public var httpQueryParamName: String = "dns"
+
     /// Create a new set of transport options. All variables are optional and will use their default values.
-    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIps: [String]? = nil, useHttp2: Bool = true) {
+    public init(dnsPrefersTcp: Bool = false, timeout: UInt8 = 5, userAgent: String? = nil, httpsBootstrapIps: [String]? = nil, useHttp2: Bool = true, httpQueryParamName: String = "dns") {
         self.dnsPrefersTcp = dnsPrefersTcp
         self.timeout = timeout
         self.userAgent = userAgent
         self.httpsBootstrapIps = httpsBootstrapIps
         self.useHttp2 = useHttp2
+        self.httpQueryParamName = httpQueryParamName
     }
 
     internal var timeoutDispatchTime: DispatchTime {
@@ -67,7 +71,7 @@ public struct TransportOptions: Sendable {
 }
 
 /// Describes query options for the DNS request
-public struct QueryOptions: Sendable {
+public struct QueryOptions: Sendable, Codable {
     /// Should DNSSEC signatures be requested alongside the requested resource
     public var dnssecRequested = false
 
@@ -158,6 +162,11 @@ public final class Query: Sendable {
             clients.append(try SystemClient(address: "", transportOptions: transportOptions))
         }
 
+        if clients.isEmpty {
+            printError("[\(#fileID):\(#line)] Query initialized with no clients")
+            throw DNSKitError.internalError("No clients initialized")
+        }
+
         self.clients = clients
     }
 
@@ -200,6 +209,12 @@ public final class Query: Sendable {
     ///
     /// - Parameter complete: A callback invoked with the response message or an error
     public func execute(withCallback complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
+        if clients.isEmpty {
+            printError("[\(#fileID):\(#line)] Attempted query execution with no clients initialized")
+            complete(.failure(DNSKitError.internalError("No clients initialized")))
+            return
+        }
+
         var dispatchQueues: [DispatchQueue] = []
         let group = DispatchGroup()
         let results = AtomicArray<IndexWithResponse>(initialValue: [])

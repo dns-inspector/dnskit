@@ -17,7 +17,7 @@
 import Foundation
 
 /// DNS record types
-public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
+public enum RecordType: UInt16, Sendable, Codable, CaseIterable, Hashable, Identifiable {
     /// Address record
     case A = 1
     /// Name server record
@@ -51,13 +51,20 @@ public enum RecordType: UInt16, Codable, CaseIterable, Sendable {
     /// HTTPS server information record
     case HTTPS = 65
 
+    public var id: Self { return self }
+
     public func string() -> String {
         return String(describing: self)
     }
 
     /// If this record type can be included in a query.
     public func canQuery() -> Bool {
-        return self != .RRSIG
+        switch self {
+        case .RRSIG, .NSEC, .NSEC3:
+            return false
+        default:
+            return true
+        }
     }
 }
 
@@ -74,7 +81,7 @@ public enum RecordClass: UInt16, Codable, CaseIterable, Sendable {
 }
 
 /// Transport options
-public enum TransportType: String, Codable, CaseIterable, Sendable {
+public enum TransportType: String, Codable, CaseIterable, Sendable, Hashable, Identifiable {
     /// Traditional DNS, plain-text.
     ///
     /// Expects the server address to be an IPv4 or IPv6 address with optional port, defaulting to 53..
@@ -100,6 +107,8 @@ public enum TransportType: String, Codable, CaseIterable, Sendable {
     /// When using this option in ``Query/init(transportType:transportOptions:serverAddresses:recordType:name:queryOptions:)``
     /// the `serverAddresses` and `transportOptions` values are ingored.
     case System = "system"
+
+    public var id: Self { return self }
 
     public func string() -> String {
         return String(describing: self)

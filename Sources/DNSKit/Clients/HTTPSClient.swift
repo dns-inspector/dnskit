@@ -70,7 +70,7 @@ internal final class HTTPClient: IClient {
             client.send(message: message, complete: complete)
         } else {
             printDebug("[\(#fileID):\(#line)] HTTP2 requested, using URLSession")
-            let client = URLSessionClient(url: self.url, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), timeout: self.transportOptions.timeout)
+            let client = URLSessionClient(url: self.url, queryParamName: transportOptions.httpQueryParamName, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), timeout: self.transportOptions.timeout)
             client.send(message: message, complete: complete)
         }
     }
@@ -96,11 +96,13 @@ internal final class HTTPClient: IClient {
 
 private final class URLSessionClient {
     public let url: URL
+    public let queryParamName: String
     public let userAgent: String
     public let timeout: UInt8
 
-    public init(url: URL, userAgent: String, timeout: UInt8) {
+    public init(url: URL, queryParamName: String, userAgent: String, timeout: UInt8) {
         self.url = url
+        self.queryParamName = queryParamName
         self.userAgent = userAgent
         self.timeout = timeout
     }
@@ -122,7 +124,7 @@ private final class URLSessionClient {
         } else {
             urlString += "?"
         }
-        urlString += "dns=\(questionData.base64UrlEncodedValue())"
+        urlString += "\(self.queryParamName)=\(questionData.base64UrlEncodedValue())"
         guard let url = URL(string: urlString) else {
             complete(.failure(.invalidUrl))
             return
