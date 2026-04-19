@@ -61,6 +61,8 @@ public struct Message: Sendable {
     }
 
     internal init(messageData: Data) throws {
+        printDebug("[\(#fileID):\(#line)] Going to parse message: \(messageData.hexEncodedString())")
+
         if messageData.count < 12 {
             printError("[\(#fileID):\(#line)] Invalid DNS message: too short \(messageData.count)B")
             throw DNSKitError.invalidData("Invalid DNS message: too short")

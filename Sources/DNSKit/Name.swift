@@ -72,6 +72,7 @@ public class Name {
         printDebug("[\(#fileID):\(#line)] Attempt to read name at \(startOffset)")
 
         if startOffset < 0 || startOffset >= data.count {
+            printDebug("[\(#fileID):\(#line)] Invalid start offset \(startOffset) for data of size \(data.count)")
             throw DNSKitError.invalidData("Invalid start offset when reading DNS name")
         }
 
@@ -88,15 +89,18 @@ public class Name {
             var depth = 0
             while labelFlag > 0 {
                 if depth > 10 {
+                    printError("[\(#fileID):\(#line)] Maximum pointer depth \(depth) reached")
                     throw DNSKitError.invalidData("Maximum pointer depth reached")
                 }
 
                 if labelFlag < 64 {
                     // Label value, labelFlag is length
                     if labelFlag >= buffer.count || offset+1+Int(labelFlag) >= buffer.count {
+                        printDebug("[\(#fileID):\(#line)] Invalid label flag value \(labelFlag)")
                         throw DNSKitError.invalidData("Label length outside of data bounds")
                     }
                     if offset+Int(labelFlag) <= offset {
+                        printDebug("[\(#fileID):\(#line)] Invalid label flag value \(labelFlag)")
                         throw DNSKitError.invalidData("Label length outside of data bounds")
                     }
 
@@ -130,6 +134,7 @@ public class Name {
                     dataOffset = offset+2
                 }
                 if Int(destination) >= buffer.count {
+                    printDebug("[\(#fileID):\(#line)] pointer destination \(destination) out of bounds of buffer size \(buffer.count)")
                     throw DNSKitError.invalidData("Pointer offset outside of data bounds")
                 }
                 offset = Int(destination)
