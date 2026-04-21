@@ -116,9 +116,12 @@ internal struct BaseTLSClient: Sendable {
                         return
                     }
 
+                    printDebug("[\(#fileID):\(#line)] Read \(lengthContent.count)B of data")
+
                     let length = lengthContent.withUnsafeBytes { buf in
                         return buf.loadUnaligned(fromByteOffset: 0, as: UInt16.self).bigEndian
                     }
+                    printDebug("[\(#fileID):\(#line)] Parsed length: \(length)")
                     if length == 0 {
                         printError("[\(#fileID):\(#line)] Length of 0 returned, aborting")
                         completeRequest(.failure(.emptyResponse))
@@ -145,6 +148,8 @@ internal struct BaseTLSClient: Sendable {
                             completeRequest(.failure(.emptyResponse))
                             return
                         }
+
+                        printDebug("[\(#fileID):\(#line)] Read \(lengthContent.count)B of data")
 
                         if messageContent.count != length {
                             printError("[\(#fileID):\(#line)] Reported and actual length do not match. Reported: \(length), actual: \(messageContent.count)")

@@ -81,6 +81,8 @@ internal final class DNSClient: IClient, Sendable {
                         return
                     }
 
+                    printDebug("[\(#fileID):\(#line)] Read \(firstData.count)B of data")
+
                     if !self.transportOptions.dnsPrefersTcp {
                         let message: Message
                         do {
@@ -100,6 +102,7 @@ internal final class DNSClient: IClient, Sendable {
                     let length = firstData.withUnsafeBytes { buf in
                         return buf.loadUnaligned(fromByteOffset: 0, as: UInt16.self).bigEndian
                     }
+                    printDebug("[\(#fileID):\(#line)] Parsed length: \(length)")
                     if length == 0 {
                         printError("[\(#fileID):\(#line)] Length of 0 returned, aborting")
                         completeRequest(.failure(.emptyResponse))
@@ -126,6 +129,8 @@ internal final class DNSClient: IClient, Sendable {
                             completeRequest(.failure(.emptyResponse))
                             return
                         }
+
+                        printDebug("[\(#fileID):\(#line)] Read \(messageContent.count)B of data")
 
                         if messageContent.count != length {
                             printError("[\(#fileID):\(#line)] Reported and actual length do not match. Reported: \(length), actual: \(messageContent.count)")
