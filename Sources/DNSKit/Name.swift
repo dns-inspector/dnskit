@@ -125,10 +125,7 @@ public class Name {
 
                 // Label is a pointer, lower 6 bits of the first byte + next byte are the destination
                 let nextByte = buffer[offset+1...offset+1].load(as: UInt8.self)
-                let b = [ labelFlag & 0x3f, nextByte ]
-                let destination = b.withUnsafeBytes {
-                    return $0.load(as: UInt16.self).bigEndian
-                }
+                let destination = UInt16(labelFlag & 0x3f) << 8 | UInt16(nextByte)
                 printDebug("[\(#fileID):\(#line)] Label is a pointer to \(destination)")
                 if dataOffset == 0 {
                     dataOffset = offset+2
