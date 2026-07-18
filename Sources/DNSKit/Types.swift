@@ -50,6 +50,8 @@ public enum RecordType: UInt16, Sendable, Codable, CaseIterable, Hashable, Ident
     case NSEC3 = 50
     /// HTTPS server information record
     case HTTPS = 65
+    /// CAA certificate authority authorization record
+    case CAA = 257
 
     public var id: Self { return self }
 

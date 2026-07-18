@@ -121,11 +121,11 @@ public struct Message: Sendable {
 
             guard let recordType = RecordType(rawValue: recordTypeRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record type in question at index \(questionsRead): \(recordTypeRaw)")
-                throw DNSKitError.invalidData("Invalid DNS message: unknown record type")
+                throw DNSKitError.invalidData("Invalid DNS message: unknown record type \(recordTypeRaw)")
             }
             guard let recordClass = RecordClass(rawValue: recordClassRaw) else {
                 printError("[\(#fileID):\(#line)] Invalid DNS message: unknown record class in question at index \(questionsRead): \(recordClassRaw)")
-                throw DNSKitError.invalidData("Invalid DNS message: unknown record class")
+                throw DNSKitError.invalidData("Invalid DNS message: unknown record class \(recordClassRaw)")
             }
 
             questions.append(Question(name: name, recordType: recordType, recordClass: recordClass))
@@ -220,6 +220,8 @@ public struct Message: Sendable {
                     recordData = try HTTPSRecordData(recordData: value)
                 case .NSEC3:
                     recordData = try NSEC3RecordData(recordData: value)
+                case .CAA:
+                    recordData = try CAARecordData(recordData: value)
                 }
             } catch {
                 printError("[\(#fileID):\(#line)] Error serlizing record data: \(error)")

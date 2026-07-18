@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.3
 
 // DNSKit
 // Copyright (C) Ian Spence and other DNSKit Contributors
