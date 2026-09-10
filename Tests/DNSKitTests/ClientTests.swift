@@ -33,28 +33,29 @@ protocol IClientTests {
 }
 
 final class ClientTests {
+    let cancel = CancellationToken()
     let client: IClient
 
     init(transportType: TransportType, transportOptions: TransportOptions = TransportOptions(), serverAddress: String) throws {
         switch transportType {
         case .DNS:
-            self.client = try DNSClient(address: serverAddress, transportOptions: transportOptions)
+            self.client = try DNSClient(cancel: cancel, address: serverAddress, transportOptions: transportOptions)
         case .TLS:
-            self.client = try TLSClient(address: serverAddress, transportOptions: transportOptions)
+            self.client = try TLSClient(cancel: cancel, address: serverAddress, transportOptions: transportOptions)
         case .HTTPS:
             if let bootstrapIps = transportOptions.httpsBootstrapIps {
-                self.client = try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIps[0], transportOptions: transportOptions)
+                self.client = try HTTPClient(cancel: cancel, address: serverAddress, bootstrapIp: bootstrapIps[0], transportOptions: transportOptions)
             } else {
-                self.client = try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions)
+                self.client = try HTTPClient(cancel: cancel, address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions)
             }
         case .QUIC:
             if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
-                self.client = try QuicClient(address: serverAddress, transportOptions: transportOptions)
+                self.client = try QuicClient(cancel: cancel, address: serverAddress, transportOptions: transportOptions)
             } else {
                 fatalError("Attempted to use Quic client on unsupported platform")
             }
         case .System:
-            self.client = try SystemClient(address: serverAddress, transportOptions: transportOptions)
+            self.client = try SystemClient(cancel: cancel, address: serverAddress, transportOptions: transportOptions)
         }
     }
 

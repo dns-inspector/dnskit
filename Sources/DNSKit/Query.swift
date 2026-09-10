@@ -101,6 +101,7 @@ public final class Query: Sendable {
     internal let clients: [IClient]
     internal let idNumber: UInt16
     nonisolated(unsafe) private var reuseClient: IClient?
+    private let cancelToken = CancellationToken()
 
     /// Create a new DNS query.
     /// - Parameters:
@@ -134,32 +135,32 @@ public final class Query: Sendable {
         switch transportType {
         case .DNS:
             for serverAddress in serverAddresses {
-                clients.append(try DNSClient(address: serverAddress, transportOptions: transportOptions))
+                clients.append(try DNSClient(cancel: self.cancelToken, address: serverAddress, transportOptions: transportOptions))
             }
         case .TLS:
             for serverAddress in serverAddresses {
-                clients.append(try TLSClient(address: serverAddress, transportOptions: transportOptions))
+                clients.append(try TLSClient(cancel: self.cancelToken, address: serverAddress, transportOptions: transportOptions))
             }
         case .HTTPS:
             for serverAddress in serverAddresses {
                 if let bootstrapIps = transportOptions.httpsBootstrapIps {
                     for bootstrapIp in bootstrapIps {
-                        clients.append(try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: transportOptions))
+                        clients.append(try HTTPClient(cancel: self.cancelToken, address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: transportOptions))
                     }
                 } else {
-                    clients.append(try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions))
+                    clients.append(try HTTPClient(cancel: self.cancelToken, address: serverAddress, bootstrapIp: nil, transportOptions: transportOptions))
                 }
             }
         case .QUIC:
             if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
                 for serverAddress in serverAddresses {
-                    clients.append(try QuicClient(address: serverAddress, transportOptions: transportOptions))
+                    clients.append(try QuicClient(cancel: self.cancelToken, address: serverAddress, transportOptions: transportOptions))
                 }
             } else {
                 fatalError("Attempted to use quic on unsupported target")
             }
         case .System:
-            clients.append(try SystemClient(address: "", transportOptions: transportOptions))
+            clients.append(try SystemClient(cancel: self.cancelToken, address: "", transportOptions: transportOptions))
         }
 
         if clients.isEmpty {
@@ -209,6 +210,10 @@ public final class Query: Sendable {
     ///
     /// - Parameter complete: A callback invoked with the response message or an error
     public func execute(withCallback complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
+        defer {
+            cancelToken.dispose()
+        }
+
         if clients.isEmpty {
             printError("[\(#fileID):\(#line)] Attempted query execution with no clients initialized")
             complete(.failure(DNSKitError.internalError("No clients initialized")))
@@ -265,29 +270,34 @@ public final class Query: Sendable {
     ///   - bootstrapIps:    Optional IP addresses to connect to for DNS over HTTP transport types.
     /// - Returns: An error or nil if valid
     public static func validateConfiguration(transportType: TransportType, serverAddresses: [String], bootstrapIps: [String]? = nil) -> Error? {
+        let token = CancellationToken()
+        defer {
+            token.dispose()
+        }
+
         do {
             for serverAddress in serverAddresses {
                 switch transportType {
                 case .DNS:
-                    _ = try DNSClient(address: serverAddress, transportOptions: TransportOptions())
+                    _ = try DNSClient(cancel: token, address: serverAddress, transportOptions: TransportOptions())
                 case .TLS:
-                    _ = try TLSClient(address: serverAddress, transportOptions: TransportOptions())
+                    _ = try TLSClient(cancel: token, address: serverAddress, transportOptions: TransportOptions())
                 case .HTTPS:
                     if let bootstrapIps = bootstrapIps {
                         for bootstrapIp in bootstrapIps {
-                            _ = try HTTPClient(address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: TransportOptions())
+                            _ = try HTTPClient(cancel: token, address: serverAddress, bootstrapIp: bootstrapIp, transportOptions: TransportOptions())
                         }
                     } else {
-                        _ = try HTTPClient(address: serverAddress, bootstrapIp: nil, transportOptions: TransportOptions())
+                        _ = try HTTPClient(cancel: token, address: serverAddress, bootstrapIp: nil, transportOptions: TransportOptions())
                     }
                 case .QUIC:
                     if #available(macOS 12.0, iOS 15.0, watchOS 8.0, tvOS 15.0, *) {
-                        _ = try QuicClient(address: serverAddress, transportOptions: TransportOptions())
+                        _ = try QuicClient(cancel: token, address: serverAddress, transportOptions: TransportOptions())
                     } else {
                         fatalError("Attempted to use quic on unsupported target")
                     }
                 case .System:
-                    _ = try SystemClient(address: serverAddress, transportOptions: TransportOptions())
+                    _ = try SystemClient(cancel: token, address: serverAddress, transportOptions: TransportOptions())
                 }
             }
             return nil
@@ -364,6 +374,11 @@ public final class Query: Sendable {
 
         // No connection was successful so just return the first
         complete(results.Get(0).result)
+    }
+
+    /// Request to cancel any pending query operation.
+    public func cancel() {
+        self.cancelToken.cancel()
     }
 }
 

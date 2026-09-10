@@ -20,7 +20,7 @@ import Network
 internal final class SystemClient: IClient {
     private let dispatchQueue: DispatchQueue
 
-    init(address: String, transportOptions: TransportOptions) throws {
+    init(cancel: CancellationToken, address: String, transportOptions: TransportOptions) throws {
         self.dispatchQueue = DispatchQueue(label: "io.ecn.dnskit.systemclient", qos: .userInitiated)
     }
 

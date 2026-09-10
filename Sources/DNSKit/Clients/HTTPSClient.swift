@@ -19,15 +19,18 @@ import Network
 
 /// The DNS over HTTPS client.
 internal final class HTTPClient: IClient {
+    internal let cancelToken: CancellationToken
     fileprivate let url: URL
     fileprivate let transportOptions: TransportOptions
     fileprivate let endpoint: NWEndpoint
 
-    required init(address: String, transportOptions: TransportOptions) throws {
+    required init(cancel: CancellationToken, address: String, transportOptions: TransportOptions) throws {
         throw DNSKitError.internalError("Not implemented. Use `HTTPClient(address,bootstrapIp,transportOptions)` instead.")
     }
 
-    init(address: String, bootstrapIp: String?, transportOptions: TransportOptions) throws {
+    init(cancel: CancellationToken, address: String, bootstrapIp: String?, transportOptions: TransportOptions) throws {
+        self.cancelToken = cancel
+
         var urlString = String(address.lowercased())
 
         if !urlString.contains("://") {
@@ -66,11 +69,11 @@ internal final class HTTPClient: IClient {
     public func send(message: Message, complete: @Sendable @escaping (Result<Response, DNSKitError>) -> Void) {
         if transportOptions.httpsBootstrapIps != nil || !transportOptions.useHttp2 {
             printDebug("[\(#fileID):\(#line)] HTTP2 not requested, using CFHTTPMessage")
-            let client = CFHTTPClient(url: self.url, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), endpoint: self.endpoint, timeout: self.transportOptions.timeoutDispatchTime)
+            let client = CFHTTPClient(cancelToken: self.cancelToken, url: self.url, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), endpoint: self.endpoint, timeout: self.transportOptions.timeoutDispatchTime)
             client.send(message: message, complete: complete)
         } else {
             printDebug("[\(#fileID):\(#line)] HTTP2 requested, using URLSession")
-            let client = URLSessionClient(url: self.url, queryParamName: transportOptions.httpQueryParamName, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), timeout: self.transportOptions.timeout)
+            let client = URLSessionClient(cancelToken: self.cancelToken, url: self.url, queryParamName: transportOptions.httpQueryParamName, userAgent: transportOptions.userAgent ?? self.defaultUserAgnet(), timeout: self.transportOptions.timeout)
             client.send(message: message, complete: complete)
         }
     }
@@ -95,12 +98,14 @@ internal final class HTTPClient: IClient {
 }
 
 private final class URLSessionClient {
+    internal let cancelToken: CancellationToken
     public let url: URL
     public let queryParamName: String
     public let userAgent: String
     public let timeout: UInt8
 
-    public init(url: URL, queryParamName: String, userAgent: String, timeout: UInt8) {
+    public init(cancelToken: CancellationToken, url: URL, queryParamName: String, userAgent: String, timeout: UInt8) {
+        self.cancelToken = cancelToken
         self.url = url
         self.queryParamName = queryParamName
         self.userAgent = userAgent
@@ -140,7 +145,7 @@ private final class URLSessionClient {
         sessionConfig.httpShouldSetCookies = false
         let session = URLSession(configuration: sessionConfig)
         printDebug("[\(#fileID):\(#line)] HTTP GET \(url)")
-        session.dataTask(with: request) { oData, oResponse, oError in
+        let task = session.dataTask(with: request) { oData, oResponse, oError in
             if let error = oError {
                 printError("[\(#fileID):\(#line)] Response error \(error)")
                 complete(.failure(.unexpectedResponse(error)))
@@ -192,17 +197,23 @@ private final class URLSessionClient {
                 printError("[\(#fileID):\(#line)] Invalid DNS message returned: \(error)")
                 complete(.failure(.invalidData(error.localizedDescription)))
             }
-        }.resume()
+        }
+
+        self.cancelToken.register {
+            task.cancel()
+        }
     }
 }
 
-private final class CFHTTPClient {
+private final class CFHTTPClient: Sendable {
+    internal let cancelToken: CancellationToken
     public let url: URL
     public let userAgent: String
     public let endpoint: NWEndpoint
     public let timeout: DispatchTime
 
-    public init(url: URL, userAgent: String, endpoint: NWEndpoint, timeout: DispatchTime) {
+    public init(cancelToken: CancellationToken, url: URL, userAgent: String, endpoint: NWEndpoint, timeout: DispatchTime) {
+        self.cancelToken = cancelToken
         self.url = url
         self.userAgent = userAgent
         self.endpoint = endpoint
@@ -301,6 +312,10 @@ private final class CFHTTPClient {
         }, queue)
 
         let connection = NWConnection(to: endpoint, using: parameters)
+
+        self.cancelToken.register {
+            connection.cancel()
+        }
 
         let completeRequest: @Sendable (Result<Response, DNSKitError>) -> Void = { result in
             didComplete.If(false) {
@@ -420,6 +435,9 @@ private final class CFHTTPClient {
                 completeRequest(.failure(.connectionError(error)))
             case .cancelled:
                 printInformation("[\(#fileID):\(#line)] NWConnection cancelled")
+                if self.cancelToken.didCancel {
+                    completeRequest(.failure(.userCancelled))
+                }
             default:
                 break
             }

@@ -23,7 +23,7 @@ internal final class QuicClient: IClient {
     fileprivate let address: SocketAddress
     fileprivate let transportOptions: TransportOptions
 
-    required init(address: String, transportOptions: TransportOptions) throws {
+    required init(cancel: CancellationToken, address: String, transportOptions: TransportOptions) throws {
         self.address = try SocketAddress(addressString: address)
         self.transportOptions = transportOptions
     }

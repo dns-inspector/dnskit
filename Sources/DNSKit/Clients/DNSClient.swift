@@ -19,10 +19,12 @@ import Network
 
 /// The traditional DNS client. Supports both UDP and TCP.
 internal final class DNSClient: IClient, Sendable {
+    internal let cancelToken: CancellationToken
     internal let address: SocketAddress
     internal let transportOptions: TransportOptions
 
-    required init(address: String, transportOptions: TransportOptions) throws {
+    required init(cancel: CancellationToken, address: String, transportOptions: TransportOptions) throws {
+        self.cancelToken = cancel
         self.address = try SocketAddress(addressString: address)
         self.transportOptions = transportOptions
     }
@@ -45,6 +47,11 @@ internal final class DNSClient: IClient, Sendable {
         let didComplete = AtomicBool(initialValue: false)
 
         let connection = NWConnection(to: NWEndpoint.socketAddress(self.address, defaultPort: 53), using: self.transportOptions.dnsPrefersTcp ? .tcp : .udp)
+
+        self.cancelToken.register {
+            connection.cancel()
+        }
+
         connection.stateUpdateHandler = { state in
             printDebug("[\(#fileID):\(#line)] NWConnection state \(String(describing: state))")
 
@@ -168,6 +175,9 @@ internal final class DNSClient: IClient, Sendable {
                 completeRequest(.failure(.connectionError(error)))
             case .cancelled:
                 printInformation("[\(#fileID):\(#line)] NWConnection cancelled")
+                if self.cancelToken.didCancel {
+                    completeRequest(.failure(.userCancelled))
+                }
             default:
                 break
             }

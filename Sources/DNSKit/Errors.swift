@@ -36,6 +36,8 @@ public enum DNSKitError: Error, Sendable {
     case excessiveResponseSize
     /// The cryptographic algorithm presented is not supported by DNSKit.
     case unsupportedAlgorithm
+    /// The user cancelled the request
+    case userCancelled
 
     /// The provided URL was invalid. Exclusive to the DNS over HTTPS client.
     case invalidUrl
@@ -56,6 +58,8 @@ public enum WHOISError: Error, Sendable {
     case whoisNotSupported
     /// The number of redirects exceeded the maximum limit
     case tooManyRedirects
+    /// The user cancelled the request
+    case userCancelled
 }
 
 /// All possible DNSSEC-related errors

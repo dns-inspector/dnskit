@@ -22,7 +22,7 @@ internal protocol IClient: Sendable {
     /// - Parameters:
     ///   - address: The DNS server address
     ///   - transportOptions: Transport options
-    init(address: String, transportOptions: TransportOptions) throws
+    init(cancel: CancellationToken, address: String, transportOptions: TransportOptions) throws
 
     /// Send a DNS message
     /// - Parameters:
