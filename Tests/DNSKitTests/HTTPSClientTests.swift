@@ -97,4 +97,18 @@ final class HTTPSClientTests: XCTestCase, IClientTests {
             //
         }
     }
+
+    func testLocalTimeout() async throws {
+        do {
+            try await ClientTests(transportType: .HTTPS, serverAddress: "https://localhost:8402/dns-query").testLocalTimeout()
+        } catch {
+            if let err = error as? DNSKitError {
+                if case DNSKitError.timedOut = err {
+                    // Test passed
+                    return
+                }
+            }
+            throw error
+        }
+    }
 }

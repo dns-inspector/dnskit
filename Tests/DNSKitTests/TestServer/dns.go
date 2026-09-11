@@ -19,6 +19,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"golang.org/x/net/dns/dnsmessage"
 )
@@ -30,6 +31,7 @@ const (
 	TestNameLengthOver     = "length.over.example.com."
 	TestNameLengthUnder    = "length.under.example.com."
 	TestInvalidIPv4Address = "invalid.ipv4.example.com."
+	TestSlow               = "slow.example.com."
 
 	// DOH Only
 	TestBadContentType = "bad.content.type.example.com."
@@ -66,6 +68,8 @@ func getDNSTestName(in []byte) string {
 		return TestBadContentType
 	case TestNoContentType:
 		return TestNoContentType
+	case TestSlow:
+		return TestSlow
 	default:
 		log.Printf("Unknown test name %s", questions[0].Name.String())
 	}
@@ -110,6 +114,10 @@ func handleDNSQuery(in []byte) ([]byte, error) {
 			reply = append(reply, []byte{0x05, 0x7f, 0x00, 0x00, 0x00, 0x01}...)
 
 			return reply, nil
+		}
+
+		if questions[0].Name.String() == TestSlow {
+			time.Sleep(60 * time.Second)
 		}
 
 		header, body := dnsAResource(questions[0].Name)

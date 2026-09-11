@@ -30,6 +30,7 @@ protocol IClientTests {
     func testLocalLengthOver() async throws
     func testLocalLengthUnder() async throws
     func testLocalAQueryInvalidAddress() async throws
+    func testLocalTimeout() async throws
 }
 
 final class ClientTests {
@@ -194,5 +195,14 @@ final class ClientTests {
         XCTAssertTrue(reply.answers.count == 1)
         XCTAssertEqual(reply.answers[0].recordType, .A)
         XCTAssertNotNil(reply.answers[0].data as? ErrorRecordData)
+    }
+
+    func testLocalTimeout() async throws {
+        let query = Query(clients: [client], recordType: .A, name: "slow.example.com")
+        let response = try await query.execute()
+        let reply = response.message
+        XCTAssertTrue(reply.answers.count == 1)
+        XCTAssertEqual(reply.answers[0].recordType, .A)
+        XCTAssertNotNil(reply.answers[0].data as? ARecordData)
     }
 }

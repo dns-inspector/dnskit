@@ -77,4 +77,18 @@ final class TLSClientTests: XCTestCase, IClientTests {
     func testLocalAQueryInvalidAddress() async throws {
         try await ClientTests(transportType: .TLS, serverAddress: "127.0.0.1:8403").testLocalAQueryInvalidAddress()
     }
+
+    func testLocalTimeout() async throws {
+        do {
+            try await ClientTests(transportType: .TLS, serverAddress: "127.0.0.1:8403").testLocalTimeout()
+        } catch {
+            if let err = error as? DNSKitError {
+                if case DNSKitError.timedOut = err {
+                    // Test passed
+                    return
+                }
+            }
+            throw error
+        }
+    }
 }

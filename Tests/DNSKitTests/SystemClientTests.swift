@@ -77,4 +77,8 @@ final class SystemClientTests: XCTestCase, IClientTests {
     func testLocalAQueryInvalidAddress() async throws {
         // Test does not apply
     }
+
+    func testLocalTimeout() async throws {
+        // Test does not apply
+    }
 }

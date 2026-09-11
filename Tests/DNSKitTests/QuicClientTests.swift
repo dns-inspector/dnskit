@@ -77,4 +77,18 @@ final class QuicClientTests: XCTestCase, IClientTests {
     func testLocalAQueryInvalidAddress() async throws {
         try await ClientTests(transportType: .QUIC, serverAddress: "127.0.0.1:8404").testLocalAQueryInvalidAddress()
     }
+
+    func testLocalTimeout() async throws {
+        do {
+            try await ClientTests(transportType: .QUIC, serverAddress: "127.0.0.1:8404").testLocalTimeout()
+        } catch {
+            if let err = error as? DNSKitError {
+                if case DNSKitError.timedOut = err {
+                    // Test passed
+                    return
+                }
+            }
+            throw error
+        }
+    }
 }
