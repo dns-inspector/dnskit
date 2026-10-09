@@ -32,14 +32,23 @@ jobs:
       - name: "DNS Test"
         id: dns-test
         run: |
+          echo "Network devices:"
           networksetup -listallnetworkservices
+
+          echo "Current DNS setup:"
           scutil --dns | grep 'nameserver\[[0-9]*\]'
 
+          echo "Removing DNS resolvers"
           sudo networksetup -setdnsservers Ethernet empty
+          echo "Updating DNS resolvers"
           sudo networksetup -setdnsservers Ethernet 1.1.1.1 1.0.0.1
+          echo "Restarting DNS service"
           sudo killall -HUP mDNSResponder
 
+          echo "Network devices:"
           networksetup -listallnetworkservices
+
+          echo "Current DNS setup:"
           scutil --dns | grep 'nameserver\[[0-9]*\]'
 
           exit 1
