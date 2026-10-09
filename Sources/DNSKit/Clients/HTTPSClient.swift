@@ -146,7 +146,12 @@ private final class URLSessionClient {
         let session = URLSession(configuration: sessionConfig)
         printDebug("[\(#fileID):\(#line)] HTTP GET \(url)")
         let task = session.dataTask(with: request) { oData, oResponse, oError in
-            if let error = oError {
+            if let error = oError as? NSError {
+                if error.code == -1001 { // Timed out
+                    printError("[\(#fileID):\(#line)] Query timed out")
+                    complete(.failure(.timedOut))
+                    return
+                }
                 printError("[\(#fileID):\(#line)] Response error \(error)")
                 complete(.failure(.unexpectedResponse(error)))
                 return
