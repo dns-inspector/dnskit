@@ -202,6 +202,8 @@ private final class URLSessionClient {
         self.cancelToken.register {
             task.cancel()
         }
+
+        task.resume()
     }
 }
 
