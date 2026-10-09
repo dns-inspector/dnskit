@@ -29,9 +29,23 @@ jobs:
     name: "Build Package"
     runs-on: macos-26
     steps:
-      - name: "DNS Test"
-        id: dns-test
+      - name: "Checkout Source"
+        id: checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #pin v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: "Prepare Build Environment"
+        id: prepare
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Switching to ${{ env.XCODE_VERSION }}"
+          sudo xcode-select -s /Applications/${{ env.XCODE_VERSION }}.app/Contents/Developer
+          xcode-select -p
+          mkdir -p /Users/runner/derived_data
+          echo "SWIFTLINT_CACHE_KEY=swiftlint_$(gh api repos/realm/swiftlint/releases/latest --jq '.assets[] | select(.name == "portable_swiftlint.zip") | .id')" >> "$GITHUB_OUTPUT"
+
           echo "Network devices:"
           networksetup -listallnetworkservices
 
@@ -50,24 +64,6 @@ jobs:
 
           echo "Current DNS setup:"
           scutil --dns | grep 'nameserver\[[0-9]*\]'
-
-          exit 1
-      - name: "Checkout Source"
-        id: checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #pin v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: "Prepare Build Environment"
-        id: prepare
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Switching to ${{ env.XCODE_VERSION }}"
-          sudo xcode-select -s /Applications/${{ env.XCODE_VERSION }}.app/Contents/Developer
-          xcode-select -p
-          mkdir -p /Users/runner/derived_data
-          echo "SWIFTLINT_CACHE_KEY=swiftlint_$(gh api repos/realm/swiftlint/releases/latest --jq '.assets[] | select(.name == "portable_swiftlint.zip") | .id')" >> "$GITHUB_OUTPUT"
 
       - name: "Restore Cached SwiftLint"
         id: restore_swiftlint
