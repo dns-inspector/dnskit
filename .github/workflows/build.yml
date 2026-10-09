@@ -29,6 +29,13 @@ jobs:
     name: "Build Package"
     runs-on: macos-26
     steps:
+      - name: "DNS Test"
+        id: dns-test
+        run: |
+          networksetup -listallnetworkservices
+          scutil --dns | grep 'nameserver\[[0-9]*\]'
+
+          exit 1
       - name: "Checkout Source"
         id: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #pin v6.0.2
