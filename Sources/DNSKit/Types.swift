@@ -72,9 +72,14 @@ public enum RecordType: UInt16, Sendable, Codable, CaseIterable, Hashable, Ident
 
 /// DNS record classes
 public enum RecordClass: UInt16, Codable, CaseIterable, Sendable {
+    /// The internet. This is the only record class that should be used.
+    /// Other classes are registered but should never be used in a situation where DNSKit would be relevant.
     case IN = 1
+    /// CSNET - Obsolete
     case CS = 2
+    /// CHAOS - Obsolete
     case CH = 3
+    /// Hesiod - Obsolete
     case HS = 4
 
     public  func string() -> String {
@@ -119,16 +124,28 @@ public enum TransportType: String, Codable, CaseIterable, Sendable, Hashable, Id
 
 /// DNS response codes
 public enum ResponseCode: Int, Codable, CaseIterable, Sendable {
+    /// No error (success)
     case NOERROR = 0
+    /// Format Error
     case FORMERR = 1
+    /// Server error
     case SERVFAIL = 2
+    /// Non-Existent Domain
     case NXDOMAIN = 3
+    /// Not Implemented
     case NOTIMP = 4
+    /// Query refused
     case REFUSED = 5
+    /// Name Exists when it should not
     case YXDOMAIN = 6
+    /// RR Set Exists when it should not
     case XRRSET = 7
-    case NOTAUTH = 8
-    case NOTZONE = 9
+    /// RR Set that should exist does not
+    case NXRRSET = 8
+    /// Server Not Authoritative for zone
+    case NOTAUTH = 9
+    /// Name not contained in zone
+    case NOTZONE = 10
 
     public func string() -> String {
         return String(describing: self)

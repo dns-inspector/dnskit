@@ -113,7 +113,7 @@ public final class Query: Sendable {
     ///   - queryOptions: Optional set of options for configuring the query. Default values are used if this is nil.
     /// - Supported values for the `serverAddresses` parameter depends on the value of the `transportType` parameter.
     ///
-    ///   If ``TransportType/DNS`` or ``TransportType/TLS`` is used, then an IP address and optional port _should_ be used. If an IPv6 address is being used with a port, the address must be wrapped in square brackets.
+    ///   If ``TransportType/DNS``, ``TransportType/TLS``, or ``TransportType/QUIC`` is used, then an IP address and optional port _should_ be used. If an IPv6 address is being used with a port, the address must be wrapped in square brackets.
     ///
     ///   If ``TransportType/HTTPS`` is used, then a valid HTTPS URL must be provided. If no protocol is defined, HTTPS is automatically added. Other protocols, such as HTTP, are not supported and will throw an error.
     /// - Throws: Will throw if an invalid server address is provided. Use ``validateConfiguration(transportType:serverAddresses:bootstrapIps:)`` to test server configuration.

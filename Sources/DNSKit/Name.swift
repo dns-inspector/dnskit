@@ -172,7 +172,7 @@ public class Name {
     }
 
     /// Returns all the qualified parent names from the given name.
-    /// For example, given 'foo.example.com', returns ['example.com.', 'com.', '.']
+    /// For example, given `foo.example.com`, returns `['example.com.', 'com.', '.']`
     /// - Parameter name: The DNS name.
     /// - Returns: An array of labels
     public static func parentNames(from name: String) -> [String] {
